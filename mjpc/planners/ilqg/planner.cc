@@ -575,7 +575,8 @@ void iLQGPlanner::Iteration(int horizon, ThreadPool& pool) {
   {
     const std::shared_lock<std::shared_mutex> lock(mtx_);
     // improvement
-    policy.CopyFrom(candidate_policy[winner], horizon);
+//    policy.CopyFrom(candidate_policy[winner], horizon);
+    policy.CopyFrom(candidate_policy[0], horizon);
 
     // feedback scaling
     policy.feedback_scaling = 1.0;
