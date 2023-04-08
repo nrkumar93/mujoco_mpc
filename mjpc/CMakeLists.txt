@@ -303,6 +303,8 @@ add_library(
   planners/ilqg/settings.h
   planners/ilqs/planner.cc
   planners/ilqs/planner.h
+  planners/insat_opt/planner.cc
+  planners/insat_opt/planner.h
   norm.cc
   norm.h
   task.cc
