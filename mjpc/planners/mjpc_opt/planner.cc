@@ -33,11 +33,11 @@
  * \date 4/7/23
 */
 
-#include <mjpc/planners/insat_opt/planner.h>
+#include <mjpc/planners/mjpc_opt/planner.h>
 
 namespace mjpc {
 
-InsatOpt::InsatOpt(std::string &task_file) {
+MjpcOpt::MjpcOpt(std::string &task_file) {
   // load model
   char loadError[1024] = "";
   mjModel* model = mj_loadXML(task_file.c_str(), nullptr, loadError, 1000);

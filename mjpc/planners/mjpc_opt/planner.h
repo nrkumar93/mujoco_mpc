@@ -44,12 +44,18 @@ namespace mjpc {
 
 class MjpcOpt {
  public:
+
+  struct Params {
+    int max_iter_;
+    double term_thresh_;
+  };
+
   // constructor
-  InsatOpt(std::string& task_file);
+  MjpcOpt(std::string& task_file);
 
-  MatDf optimize(VecDf& s1, VecDf& s2);
+  MatDf optimize(VecDf& s1, VecDf& s2, double dt, int horizon);
 
-  MatDf warmOptimize(VecDf& s1, VecDf& s2);
+  MatDf warmOptimize(MatDf& traj1, MatDf& traj2);
 
 
   InsatTask task_;
