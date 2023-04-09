@@ -37,38 +37,39 @@
 #ifndef MJPC_TASKS_INSAT_TASK_H_
 #define MJPC_TASKS_INSAT_TASK_H_
 
-#include <mjpc/tasks/tasks.h>
-#include <glfw_adapter.h>
-#include <absl/flags/flag.h>
-#include <absl/flags/parse.h>
-#include <absl/strings/match.h>
-
-#include "mjpc/simulate.h"  // mjpc fork
-#include "mjpc/array_safety.h"
+#include <mjpc/task.h>
+#include <mjpc/states/state.h>
 
 namespace mjpc {
 
-namespace mj = ::mujoco;
-namespace mju = ::mujoco::util_mjpc;
 
 class InsatTask : public Task
 {
  public:
   InsatTask();
 
-  mjModel* LoadModel(std::string filename, mj::Simulate& sim);
+  std::string Name() const override;
+  std::string XmlPath() const override;
+  // ------- Residuals for cartpole task ------
+  //   Number of residuals: 4
+  //     Residual (0):
+  //     Residual (1):
+  //     Residual (2):
+  //     Residual (3):
+  // ------------------------------------------
+  void Residual(const mjModel* model, const mjData* data,
+                double* residual) const override;
 
-  std::unique_ptr<mj::Simulate> sim;
 
-  // load error string length
-  const int kErrorLength = 1024;
+  void setStart();
 
-  // model and data
-  mjModel* m = nullptr;
-  mjData* d = nullptr;
+  void setGoal();
 
-  // control noise variables
-  mjtNum* ctrlnoise = nullptr;
+  State start_;
+  State goal_;
+
+  bool free_start_ = false;
+  bool free_goal_ = false;
 
 };
 

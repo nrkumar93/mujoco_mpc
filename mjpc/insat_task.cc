@@ -34,7 +34,7 @@
  * \date 4/8/23
 */
 
-#include <mjpc/tasks/insat_task.h>
+#include "insat_task.h"
 
 namespace mjpc
 {
@@ -44,49 +44,6 @@ InsatTask::InsatTask() {
 
 }
 
-mjModel *InsatTask::LoadModel(std::string filename, mj::Simulate &sim) {
-  // make sure filename is not empty
-  if (filename.empty()) {
-    return nullptr;
-  }
-
-  // load and compile
-  char loadError[1024] = "";
-  mjModel* mnew = 0;
-  if (absl::StrContains(filename, ".mjb")) {
-    mnew = mj_loadModel(filename.c_str(), nullptr);
-    if (!mnew) {
-      mju::strcpy_arr(loadError, "could not load binary model");
-    }
-  } else {
-    mnew = mj_loadXML(filename.c_str(), nullptr, loadError,
-                      mj::Simulate::kMaxFilenameLength);
-    // remove trailing newline character from loadError
-    if (loadError[0]) {
-      int error_length = mju::strlen_arr(loadError);
-      if (loadError[error_length - 1] == '\n') {
-        loadError[error_length - 1] = '\0';
-      }
-    }
-  }
-
-  mju::strcpy_arr(sim.loadError, loadError);
-
-  if (!mnew) {
-    std::printf("%s\n", loadError);
-    return nullptr;
-  }
-
-  // compiler warning: print and pause
-  if (loadError[0]) {
-    // mj_forward() below will print the warning message
-    std::printf("Model compiled, but simulation warning (paused):\n  %s\n",
-                loadError);
-    sim.run = 0;
-  }
-
-  return mnew;
-}
 
 
 }
