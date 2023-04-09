@@ -61,6 +61,9 @@ class Trajectory {
       const Task* task, const mjModel* model, mjData* data, const double* state,
       double time, const double* mocap, const double* userdata, int steps);
 
+  // Join incoming trajectory with ours
+  void Concatenate(const Trajectory& trajectory);
+
   // ----- members ----- //
   int horizon;                   // trajectory length
   int dim_state;                 // states dimension

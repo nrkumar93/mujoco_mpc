@@ -278,6 +278,23 @@ void Trajectory::RolloutDiscrete(
   UpdateReturn(task);
 }
 
+// Join incoming trajectory with ours
+void Trajectory::Concatenate(const mjpc::Trajectory &trajectory) {
+  horizon += trajectory.horizon;
+  /// dim_state shouldn't change
+  /// dim_action shouldn't change
+  /// dim_residual shouldn't change
+  /// dim_trace shouldn't change
+  states.insert(states.end(), trajectory.states.begin(), trajectory.states.begin());
+  actions.insert(actions.end(), trajectory.actions.begin(), trajectory.actions.begin());
+  times.insert(times.end(), trajectory.times.begin(), trajectory.times.begin());
+  residual.insert(residual.end(), trajectory.residual.begin(), trajectory.residual.begin());
+  costs.insert(costs.end(), trajectory.costs.begin(), trajectory.costs.begin());
+  trace.insert(trace.end(), trajectory.trace.begin(), trajectory.trace.begin());
+  total_return += trajectory.total_return;
+  failure = failure && trajectory.failure;
+}
+
 // calculates total_return and costs
 void Trajectory::UpdateReturn(const Task* task) {
   // reset
