@@ -44,6 +44,9 @@ class iLQGPolicy : public Policy {
   // copy policy
   void CopyFrom(const iLQGPolicy& policy, int horizon);
 
+  // Join incoming policy with ours
+  void Concatenate(const iLQGPolicy& policy);
+
  public:
   // ----- members ----- //
   const mjModel* model;

@@ -165,4 +165,17 @@ void iLQGPolicy::CopyFrom(const iLQGPolicy& policy, int horizon) {
            horizon * model->nu);
 }
 
+// Join incoming policy with ours
+void iLQGPolicy::Concatenate(const mjpc::iLQGPolicy &policy) {
+  trajectory.Concatenate(policy.trajectory);
+  feedback_gain.insert(feedback_gain.end(), policy.feedback_gain.begin(), policy.feedback_gain.end());
+  action_improvement.insert(action_improvement.end(), policy.action_improvement.begin(), policy.action_improvement.end());
+  state_scratch.insert(state_scratch.end(), policy.state_scratch.begin(), policy.state_scratch.end());
+  action_scratch.insert(action_scratch.end(), policy.action_scratch.begin(), policy.action_scratch.end());
+  feedback_gain_scratch.insert(feedback_gain_scratch.end(), policy.feedback_gain_scratch.begin(), policy.feedback_gain_scratch.end());
+  state_interp.insert(state_interp.end(), policy.state_interp.begin(), policy.state_interp.end());
+  assert(representation == policy.representation);
+  feedback_scaling = std::min(feedback_scaling, policy.feedback_scaling);
+}
+
 }  // namespace mjpc
