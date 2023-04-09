@@ -239,6 +239,8 @@ add_library(
   utilities.h
   tasks/tasks.cc
   tasks/tasks.h
+  tasks/insat_task.cc
+  tasks/insat_task.h
   tasks/acrobot/acrobot.cc
   tasks/acrobot/acrobot.h
   tasks/cartpole/cartpole.cc
@@ -319,6 +321,7 @@ target_link_libraries(
   mujoco::mujoco
   threadpool
   Threads::Threads
+  mujoco::platform_ui_adapter
 )
 target_include_directories(libmjpc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
