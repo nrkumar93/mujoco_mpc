@@ -239,8 +239,6 @@ add_library(
   utilities.h
   tasks/tasks.cc
   tasks/tasks.h
-  tasks/insat_task.cc
-  tasks/insat_task.h
   tasks/acrobot/acrobot.cc
   tasks/acrobot/acrobot.h
   tasks/cartpole/cartpole.cc
@@ -305,12 +303,14 @@ add_library(
   planners/ilqg/settings.h
   planners/ilqs/planner.cc
   planners/ilqs/planner.h
-  planners/insat_opt/planner.cc
-  planners/insat_opt/planner.h
+  planners/mjpc_opt/planner.cc
+  planners/mjpc_opt/planner.h
   norm.cc
   norm.h
   task.cc
   task.h
+  insat_task.cc
+  insat_task.h
 )
 set_target_properties(libmjpc PROPERTIES OUTPUT_NAME mjpc)
 target_compile_options(libmjpc PUBLIC ${MJPC_COMPILE_OPTIONS})
