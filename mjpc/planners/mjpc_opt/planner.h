@@ -27,51 +27,37 @@
   * POSSIBILITY OF SUCH DAMAGE.
 
  */
-
 /*!
- * \file insat_task.h 
- * \author Ram Natarajan (rnataraj@cs.cmu.edu)
- * \date 4/7/23
-*/
+ * \file   InsatPlanner.cpp
+ * \author Ramkumar Natarajan (rnataraj@cs.cmu.edu)
+ * \date   4/7/23
+ */
 
-#ifndef MJPC_TASKS_INSAT_TASK_H_
-#define MJPC_TASKS_INSAT_TASK_H_
+#ifndef MJPC_PLANNERS_INSAT_OPTIMIZER_H_
+#define MJPC_PLANNERS_INSAT_OPTIMIZER_H_
 
-#include <mjpc/tasks/tasks.h>
-#include <glfw_adapter.h>
-#include <absl/flags/flag.h>
-#include <absl/flags/parse.h>
-#include <absl/strings/match.h>
-
-#include "mjpc/simulate.h"  // mjpc fork
-#include "mjpc/array_safety.h"
+#include <mjpc/planners/ilqg/planner.h>
+#include <mjpc/insat_task.h>
+#include <mjpc/common/EigenTypes.h>
 
 namespace mjpc {
 
-namespace mj = ::mujoco;
-namespace mju = ::mujoco::util_mjpc;
-
-class InsatTask : public Task
-{
+class MjpcOpt {
  public:
-  InsatTask(std::vector<std::shared_ptr<mjpc::Task>> tasks, int task_id);
+  // constructor
+  InsatOpt(std::string& task_file);
 
-  mjModel* LoadModel(std::string filename, mj::Simulate& sim);
+  MatDf optimize(VecDf& s1, VecDf& s2);
 
-  std::unique_ptr<mj::Simulate> sim;
+  MatDf warmOptimize(VecDf& s1, VecDf& s2);
 
-  // load error string length
-  const int kErrorLength = 1024;
 
-  // model and data
-  mjModel* m = nullptr;
-  mjData* d = nullptr;
+  InsatTask task_;
 
-  // control noise variables
-  mjtNum* ctrlnoise = nullptr;
+  iLQGPlanner planner_;
 
 };
 
 }
 
-#endif //MJPC_TASKS_INSAT_TASK_H_
+#endif //MJPC_PLANNERS_INSAT_OPTIMIZER_H_

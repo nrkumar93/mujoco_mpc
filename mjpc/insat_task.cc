@@ -39,46 +39,8 @@
 namespace mjpc
 {
 
-InsatTask::InsatTask(std::vector<std::shared_ptr<mjpc::Task>> tasks, int task_id) {
+InsatTask::InsatTask() {
 
-  sim = std::make_unique<mj::Simulate>(
-      std::make_unique<mujoco::GlfwAdapter>(),
-      std::make_shared<Agent>());
-
-  sim->agent->SetTaskList(std::move(tasks));
-  std::string task_name = tasks[task_id]->Name();
-
-  if (task_name.empty()) {
-    sim->agent->gui_task_id = task_id;
-  } else {
-    sim->agent->gui_task_id = sim->agent->GetTaskIdByName(task_name);
-    if (sim->agent->gui_task_id == -1) {
-      std::cerr << "Invalid --task flag: '" << task_name
-                << "'. Valid values:\n";
-      std::cerr << sim->agent->GetTaskNames();
-      mju_error("Invalid --task flag.");
-    }
-  }
-
-  sim->filename = sim->agent->GetTaskXmlPath(sim->agent->gui_task_id);
-  m = LoadModel(sim->filename, *sim);
-  if (m) d = mj_makeData(m);
-
-  sim->mnew = m;
-  sim->dnew = d;
-
-  // control noise
-  free(ctrlnoise);
-  ctrlnoise = (mjtNum*)malloc(sizeof(mjtNum) * m->nu);
-  mju_zero(ctrlnoise, m->nu);
-
-  sim->agent->Initialize(m);
-  sim->agent->Allocate();
-  sim->agent->Reset();
-  sim->agent->PlotInitialize();
-
-  sim->delete_old_m_d = true;
-  sim->loadrequest = 2;
 
 }
 

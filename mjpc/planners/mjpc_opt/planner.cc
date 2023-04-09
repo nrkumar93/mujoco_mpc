@@ -28,40 +28,30 @@
 
  */
 /*!
- * \file   InsatPlanner.cpp
- * \author Ramkumar Natarajan (rnataraj@cs.cmu.edu)
- * \date   4/7/23
- */
+ * \file planner.cc 
+ * \author Ram Natarajan (rnataraj@cs.cmu.edu)
+ * \date 4/7/23
+*/
 
-#ifndef MJPC_PLANNERS_INSAT_OPTIMIZER_H_
-#define MJPC_PLANNERS_INSAT_OPTIMIZER_H_
-
-#include <mjpc/planners/ilqg/planner.h>
+#include <mjpc/planners/insat_opt/planner.h>
 
 namespace mjpc {
 
-class InsatOpt : public iLQGPlanner {
- public:
-  // constructor
-  InsatOpt() = default;
+InsatOpt::InsatOpt(std::string &task_file) {
+  // load model
+  char loadError[1024] = "";
+  mjModel* model = mj_loadXML(task_file.c_str(), nullptr, loadError, 1000);
+  if (loadError[0]) std::cerr << "load error: " << loadError << '\n';
 
-  // initialize data and settings
-  void Initialize(mjModel* model, const Task& task) override;
+  task_.Reset(model);
 
-  // allocate memory
-  void Allocate() override;
-
-  // reset memory to zeros
-  void Reset(int horizon) override;
-
-  // set low-D state
-  void SetLowDState(State& state);
-
-  // set full-D state
-  void SetFullDState(State& state);
-
-};
+  // ----- iLQG planner ----- //
+  planner_.Initialize(model, task_);
+  planner_.Allocate();
+  planner_.Reset(kMaxTrajectoryHorizon);
 
 }
 
-#endif //MJPC_PLANNERS_INSAT_OPTIMIZER_H_
+
+
+}

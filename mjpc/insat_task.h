@@ -27,8 +27,51 @@
   * POSSIBILITY OF SUCH DAMAGE.
 
  */
+
 /*!
- * \file planner.cc 
+ * \file insat_task.h 
  * \author Ram Natarajan (rnataraj@cs.cmu.edu)
  * \date 4/7/23
 */
+
+#ifndef MJPC_TASKS_INSAT_TASK_H_
+#define MJPC_TASKS_INSAT_TASK_H_
+
+#include <mjpc/tasks/tasks.h>
+#include <glfw_adapter.h>
+#include <absl/flags/flag.h>
+#include <absl/flags/parse.h>
+#include <absl/strings/match.h>
+
+#include "mjpc/simulate.h"  // mjpc fork
+#include "mjpc/array_safety.h"
+
+namespace mjpc {
+
+namespace mj = ::mujoco;
+namespace mju = ::mujoco::util_mjpc;
+
+class InsatTask : public Task
+{
+ public:
+  InsatTask();
+
+  mjModel* LoadModel(std::string filename, mj::Simulate& sim);
+
+  std::unique_ptr<mj::Simulate> sim;
+
+  // load error string length
+  const int kErrorLength = 1024;
+
+  // model and data
+  mjModel* m = nullptr;
+  mjData* d = nullptr;
+
+  // control noise variables
+  mjtNum* ctrlnoise = nullptr;
+
+};
+
+}
+
+#endif //MJPC_TASKS_INSAT_TASK_H_
