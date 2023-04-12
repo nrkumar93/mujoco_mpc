@@ -41,6 +41,7 @@ include(MpcOptions)
 include(MujocoMacOS)
 
 option(MJPC_BUILD_TESTS "Build tests for MJPC" ON)
+add_compile_options(-w) # Suppress ALL warnings (https://stackoverflow.com/questions/65011913/cmake-suppress-all-warnings)
 
 include(FindOrFetch)
 
