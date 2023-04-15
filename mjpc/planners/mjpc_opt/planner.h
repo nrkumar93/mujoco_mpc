@@ -38,6 +38,7 @@
 
 #include <mjpc/planners/ilqg/planner.h>
 #include <mjpc/insat_task.h>
+#include <mjpc/threadpool.h>
 #include <mjpc/common/EigenTypes.h>
 
 namespace mjpc {
@@ -51,16 +52,21 @@ class MjpcOpt {
   };
 
   // constructor
-  MjpcOpt(std::string& task_file);
+  MjpcOpt(mjModel* model, const mjData* data);
 
-  MatDf optimize(VecDf& s1, VecDf& s2, double dt, int horizon);
+  iLQGPolicy optimize(VecDf& low1, VecDf& low2, double dt, int horizon);
 
-  MatDf warmOptimize(MatDf& traj1, MatDf& traj2);
+  iLQGPolicy optimize(VecDf& low1, VecDf& low2,
+                      VecDf& aux1, VecDf& aux2,
+                      double dt, int horizon);
 
+  iLQGPolicy warmOptimize(iLQGPolicy& traj1, iLQGPolicy& traj2);
 
   InsatTask task_;
 
   iLQGPlanner planner_;
+
+  ThreadPool pool_;
 
 };
 

@@ -37,13 +37,8 @@
 
 namespace mjpc {
 
-MjpcOpt::MjpcOpt(std::string &task_file) {
-  // load model
-  char loadError[1024] = "";
-  mjModel* model = mj_loadXML(task_file.c_str(), nullptr, loadError, 1000);
-  if (loadError[0]) std::cerr << "load error: " << loadError << '\n';
-
-  task_.Reset(model);
+MjpcOpt::MjpcOpt(mjModel* model, const mjData* data) : pool_(1) {
+  task_.Reset(model, data);
 
   // ----- iLQG planner ----- //
   planner_.Initialize(model, task_);
@@ -52,6 +47,24 @@ MjpcOpt::MjpcOpt(std::string &task_file) {
 
 }
 
+iLQGPolicy MjpcOpt::optimize(VecDf &low1, VecDf &low2, double dt, int horizon) {
+
+  VecDf state1(planner_.model->nq + planner_.model->nv + planner_.model->na);
+  VecDf state2(planner_.model->nq + planner_.model->nv + planner_.model->na);
+
+  state1.head(planner_.model->nq) = low1;
+  state1.tail(planner_.model->nv + planner_.model->na).setZero();
+  task_.setStart(state1); // Set the start state
+
+  state2.head(planner_.model->nq) = low2;
+  state2.tail(planner_.model->nv + planner_.model->na).setZero();
+  task_.setGoal(state2); // Set the goal state
+
+  int steps =
+      mju_max(mju_min(horizon / dt + 1, kMaxTrajectoryHorizon), 1);
+  planner_.model->opt.timestep = dt;
+
+}
 
 
 }
