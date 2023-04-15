@@ -44,6 +44,21 @@ InsatTask::InsatTask() {
 
 }
 
+void InsatTask::Reset(const mjModel* model, const mjData* data) {
+  Task::Reset(model);
 
+  // Initialize the start state
+  start_.Initialize(model);
+  start_.Allocate(model);
+  start_.Reset();
+  start_.Set(model, data);
+
+
+  // Initialize the goal state
+  goal_.Initialize(model);
+  goal_.Allocate(model);
+  goal_.Reset();
+  goal_.Set(model, data);
+}
 
 }

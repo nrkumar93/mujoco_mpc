@@ -37,8 +37,11 @@
 #ifndef MJPC_TASKS_INSAT_TASK_H_
 #define MJPC_TASKS_INSAT_TASK_H_
 
+#include <shared_mutex>
+
 #include <mjpc/task.h>
 #include <mjpc/states/state.h>
+#include <mjpc/common/EigenTypes.h>
 
 namespace mjpc {
 
@@ -47,6 +50,8 @@ class InsatTask : public Task
 {
  public:
   InsatTask();
+
+  void Reset(const mjModel* model, const mjData* data);
 
   std::string Name() const override;
   std::string XmlPath() const override;
@@ -61,9 +66,9 @@ class InsatTask : public Task
                 double* residual) const override;
 
 
-  void setStart();
+  void setStart(const VecDf& start);
 
-  void setGoal();
+  void setGoal(const VecDf& goal);
 
   State start_;
   State goal_;
