@@ -37,6 +37,8 @@ if(APPLE)
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+list(APPEND CMAKE_PREFIX_PATH /opt/drake)
+
 include(MpcOptions)
 include(MujocoMacOS)
 
@@ -48,8 +50,15 @@ include(FindOrFetch)
 find_package(Python)
 find_package(Threads REQUIRED)
 find_package(Eigen3 REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(SBPL REQUIRED)
+find_package(drake REQUIRED)
 
-include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(include
+        ${SBPL_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
+        ${drake_INCLUDE_DIRS}
+        ${CMAKE_CURRENT_SOURCE_DIR}/pinsat/include)
 
 set(MUJOCO_BUILD_EXAMPLES OFF)
 set(MUJOCO_BUILD_SIMULATE ON)
@@ -365,6 +374,62 @@ if(APPLE)
   target_sources(mjpc PRIVATE macos_gui.mm)
   target_link_libraries(mjpc "-framework Cocoa")
 endif()
+
+######### (P)INSAT additions #########
+set(PINSAT_SOURCES
+  pinsat/src/common/State.cpp
+  pinsat/src/common/Edge.cpp
+  pinsat/src/common/insat/InsatEdge.cpp
+  pinsat/src/planners/Planner.cpp
+  pinsat/src/planners/BFSPlanner.cpp
+  pinsat/src/planners/WastarPlanner.cpp
+  pinsat/src/planners/PwastarPlanner.cpp
+  pinsat/src/planners/PasePlanner.cpp
+  pinsat/src/planners/EpasePlanner.cpp
+  pinsat/src/planners/GepasePlanner.cpp
+  pinsat/src/planners/MplpPlanner.cpp
+  pinsat/src/planners/RrtPlanner.cpp
+  pinsat/src/planners/RrtConnectPlanner.cpp
+  pinsat/src/planners/insat/PinsatPlanner.cpp
+  pinsat/src/planners/insat/InsatPlanner.cpp
+  pinsat/src/planners/insat/opt/DummyOpt.cpp
+  pinsat/src/planners/insat/opt/BSplineOpt.cpp
+  pinsat/src/planners/insat/opt/MjpcOpt.cpp
+)
+
+add_executable(run_robot_nav_2d
+        pinsat/examples/robot_nav_2d/run_robot_nav_2d.cpp
+        pinsat/examples/robot_nav_2d/RobotNav2dActions.cpp
+        ${PINSAT_SOURCES})
+target_link_libraries(run_robot_nav_2d
+        ${OpenCV_LIBRARIES}
+        ${SBPL_LIBRARIES}
+        ${drake_LIBRARIES}
+        pthread)
+target_include_directories(run_robot_nav_2d PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_executable(run_insat_nav_2d
+        pinsat/examples/insat/robot_nav_2d/run_insat_nav_2d.cpp
+        pinsat/examples/insat/robot_nav_2d/InsatNav2dActions.cpp
+        ${PINSAT_SOURCES})
+target_link_libraries(run_insat_nav_2d
+        ${OpenCV_LIBRARIES}
+        ${SBPL_LIBRARIES}
+        ${drake_LIBRARIES}
+        pthread)
+target_include_directories(run_insat_nav_2d PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+add_executable(run_manipulation
+        pinsat/examples/manipulation/run_manipulation.cpp
+        pinsat/examples/manipulation/ManipulationActions.cpp
+        pinsat/examples/manipulation/bfs3d.cpp
+        ${PINSAT_SOURCES})
+target_link_libraries(run_manipulation
+        mujoco::mujoco
+        libmjpc
+        ${drake_LIBRARIES}
+        pthread)
+target_include_directories(run_manipulation PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(opt_test
         test/insat/opt_test.cc
