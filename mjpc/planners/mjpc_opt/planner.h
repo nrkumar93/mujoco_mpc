@@ -48,24 +48,32 @@ class MjpcOpt {
 
   struct Params {
     int max_iter_;
-    double term_thresh_;
+    double conv_thresh_;
   };
 
   // constructor
   MjpcOpt(mjModel* model, const mjData* data);
 
-  iLQGPolicy optimize(VecDf& low1, VecDf& low2, double dt, int horizon);
+  iLQGPolicy optimize(int horizon);
 
-  iLQGPolicy optimize(VecDf& low1, VecDf& low2,
-                      VecDf& aux1, VecDf& aux2,
-                      double dt, int horizon);
+  iLQGPolicy optimize(const VecDf& low1, const VecDf& low2, double dt, double T);
 
-  iLQGPolicy warmOptimize(iLQGPolicy& traj1, iLQGPolicy& traj2);
+  iLQGPolicy optimize(const VecDf& low1, const VecDf& low2,
+                      const VecDf& aux1, const VecDf& aux2,
+                      double dt, double T);
 
+  iLQGPolicy warmOptimize(const VecDf& low1, const VecDf& low2,
+                          const iLQGPolicy& pol1, const iLQGPolicy& pol2, double dt);
+
+  iLQGPolicy warmOptimize(const VecDf& low1, const VecDf& low2,
+                          const VecDf& aux1, const VecDf& aux2,
+                          const iLQGPolicy& pol1, const iLQGPolicy& pol2, double dt);
+
+
+  int state_len_;
+  Params params_;
   InsatTask task_;
-
   iLQGPlanner planner_;
-
   ThreadPool pool_;
 
 };

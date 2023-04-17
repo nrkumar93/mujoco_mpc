@@ -38,6 +38,8 @@
 namespace mjpc {
 
 MjpcOpt::MjpcOpt(mjModel* model, const mjData* data) : pool_(1) {
+  state_len_ = model->nq + model->nv + model->na;
+
   task_.Reset(model, data);
 
   // ----- iLQG planner ----- //
@@ -47,23 +49,107 @@ MjpcOpt::MjpcOpt(mjModel* model, const mjData* data) : pool_(1) {
 
 }
 
-iLQGPolicy MjpcOpt::optimize(VecDf &low1, VecDf &low2, double dt, int horizon) {
+iLQGPolicy MjpcOpt::optimize(int horizon) {
+  planner_.SetState(task_.start_);
+
+  // ---- optimize ----- //
+  MatDf prev_soln(horizon, state_len_);
+  for (int i = 0; i < params_.max_iter_; i++) {
+    planner_.OptimizePolicy(horizon, pool_);
+
+    MatDf soln =
+        Eigen::Map<MatDf>(planner_.candidate_policy[0].trajectory.states.data(), state_len_, horizon);
+
+    /// Check for convergence
+    if (i > 0) {
+      if ((prev_soln-soln).norm() < params_.conv_thresh_) {
+        prev_soln = soln;
+        break;
+      }
+      prev_soln = soln;
+    }
+  }
+
+  return planner_.candidate_policy[0];
+}
+
+iLQGPolicy MjpcOpt::optimize(const VecDf &low1, const VecDf &low2, double dt, double T) {
+  VecDf aux1 = VecDf(planner_.model->nv + planner_.model->na).setZero();
+  VecDf aux2 = VecDf(planner_.model->nv + planner_.model->na).setZero();
+
+  return optimize(low1, low2, aux1, aux2, dt, T);
+}
+
+iLQGPolicy MjpcOpt::optimize(const VecDf &low1,
+                             const VecDf &low2,
+                             const VecDf &aux1,
+                             const VecDf &aux2,
+                             double dt, double T) {
+  planner_.Reset(kMaxTrajectoryHorizon);
 
   VecDf state1(planner_.model->nq + planner_.model->nv + planner_.model->na);
   VecDf state2(planner_.model->nq + planner_.model->nv + planner_.model->na);
 
   state1.head(planner_.model->nq) = low1;
-  state1.tail(planner_.model->nv + planner_.model->na).setZero();
-  task_.setStart(state1); // Set the start state
+  state1.tail(planner_.model->nv + planner_.model->na) = aux1;
 
   state2.head(planner_.model->nq) = low2;
-  state2.tail(planner_.model->nv + planner_.model->na).setZero();
+  state2.tail(planner_.model->nv + planner_.model->na) = aux2;
+
+  task_.setStart(state1); // Set the start state
   task_.setGoal(state2); // Set the goal state
 
-  int steps =
-      mju_max(mju_min(horizon / dt + 1, kMaxTrajectoryHorizon), 1);
   planner_.model->opt.timestep = dt;
 
+  int horizon =
+      mju_max(mju_min(T / dt + 1, kMaxTrajectoryHorizon), 1);
+
+  return optimize(horizon);
+}
+
+iLQGPolicy MjpcOpt::warmOptimize(const VecDf &low1,
+                                 const VecDf &low2,
+                                 const mjpc::iLQGPolicy &pol1,
+                                 const mjpc::iLQGPolicy &pol2,
+                                 double dt) {
+  int pol2_len = pol2.trajectory.horizon;
+  Eigen::Map<const VecDf> traj_st(pol1.trajectory.states.data(), state_len_);
+  Eigen::Map<const VecDf> traj_go(pol2.trajectory.states.data() + ((pol2_len-1)*state_len_), state_len_);
+
+  VecDf aux1 = traj_st.tail(planner_.model->nv + planner_.model->na);
+  VecDf aux2 = traj_go.tail(planner_.model->nv + planner_.model->na);
+
+  return warmOptimize(low1, low2, aux1, aux2, pol1, pol2, dt);
+}
+
+iLQGPolicy MjpcOpt::warmOptimize(const VecDf &low1,
+                                 const VecDf &low2,
+                                 const VecDf &aux1,
+                                 const VecDf &aux2,
+                                 const mjpc::iLQGPolicy &pol1,
+                                 const mjpc::iLQGPolicy &pol2,
+                                 double dt) {
+  planner_.Reset(kMaxTrajectoryHorizon);
+
+  VecDf state1(planner_.model->nq + planner_.model->nv + planner_.model->na);
+  VecDf state2(planner_.model->nq + planner_.model->nv + planner_.model->na);
+
+  state1.head(planner_.model->nq) = low1;
+  state1.tail(planner_.model->nv + planner_.model->na) = aux1;
+
+  state2.head(planner_.model->nq) = low2;
+  state2.tail(planner_.model->nv + planner_.model->na) = aux2;
+
+  task_.setStart(state1); /// Set the start state
+  task_.setGoal(state2); /// Set the goal state
+
+  auto pol = pol1;
+  pol.Concatenate(pol2); /// Merge the policies
+  planner_.model->opt.timestep = dt; /// Set the timestep
+  int horizon = pol.trajectory.horizon; /// Get the horizon of concatenated policy
+
+  planner_.policy = pol; /// Initial guess
+  return optimize(horizon);
 }
 
 
