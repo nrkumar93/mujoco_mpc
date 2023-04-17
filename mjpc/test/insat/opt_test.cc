@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <mujoco/mujoco.h>
+#include "mjpc/cmake-build-release/_deps/mujoco-src/include/mujoco/mujoco.h"
 #include <cassert>
 #include "mjpc/planners/ilqg/planner.h"
 #include "mjpc/states/state.h"

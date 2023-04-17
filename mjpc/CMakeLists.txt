@@ -367,7 +367,7 @@ if(APPLE)
 endif()
 
 add_executable(opt_test
-        insat/opt_test.cc
+        test/insat/opt_test.cc
         )
 target_link_libraries(opt_test
         libmjpc
