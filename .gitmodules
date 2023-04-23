@@ -1,0 +1,3 @@
+[submodule "mjpc/pinsat"]
+	path = mjpc/pinsat
+	url = git@github.com:nrkumar93/pinsat.git
