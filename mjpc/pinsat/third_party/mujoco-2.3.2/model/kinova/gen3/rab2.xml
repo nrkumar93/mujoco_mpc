@@ -1,8 +1,0 @@
-<mujoco model="rab2">
-    <!--  ================= right_angle_box ================= /-->        
-    <geom name="t5" type="box" pos="-0.35 0.0 0.25" size="0.15 0.3 0.05" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" condim='3' friction='1 1 1' priority="1"/>
-    <geom name="t6" type="box" pos="0.0 0.0 -0.25" size="0.5 0.3 0.05" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" condim='3' friction='1 1 1' priority="1"/>
-    <geom name="t7" type="box" pos="0.0 -0.35 0.0" size="0.5 0.05 0.3000" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" condim='3' friction='1 1 1'  priority="1"/>
-    <geom name="t8" type="box" pos="0.0 0.35 0.0" size="0.5 0.05 0.3000" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" condim='3' friction='1 1 1'  priority="1"/>
-    <geom name="t9" type="box" pos="0.55 0.0 0.0" size="0.05 0.4 0.3000" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" condim='3' friction='1 1 1'  priority="1"/>
-</mujoco>
