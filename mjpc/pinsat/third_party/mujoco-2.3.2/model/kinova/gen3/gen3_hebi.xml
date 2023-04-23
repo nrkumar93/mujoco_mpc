@@ -1,4 +1,4 @@
-<mujoco model="iiwa_workcell">
+<mujoco model="gen3_hebi">
     <compiler angle="radian"/>
     <size nconmax="100" njmax="500" nstack="1270940"/>
     <option>
@@ -30,27 +30,14 @@
         <light name="light1" diffuse=".5 .5 .5" pos="-1.5 1.5 2"  dir="1 -1 -.5" castshadow="false" />
         <light name="light2" diffuse=".5 .5 .5" pos="1.5 -1.5 2"  dir="-1 1 -.5" castshadow="false" />
         <light name="light3" diffuse=".5 .5 .5" pos="-1.5 -1.5 2" dir="1 1 -.5" castshadow="false" />
-        <!-- Floor -->
-        <geom name="floor" pos="0 0 0" size="5 5 .125" type="plane" material="MatPlane" condim="3"  contype="1" conaffinity="1"/>
-        <!-- <geom name="tplane" pos="0.3 0 0.77153" quat="0.707 0 0 0.707" type="plane" size="0.4 0.625 1e-3" group = "1" rgba="0 0 0 0" /> -->
-        <!-- Environment: Workcell -->
-        <body name="workcell" pos="0 0 0" quat="0.707 0 0 -0.707">
-            <geom name="table" size="0.3 0.625 0.385765" pos="0 0.3 0.385765" type="box" rgba="0.16 0.24 0.32 1"  conaffinity="32" contype="32"/>
-            <!-- <geom name="table" size="0.9144 0.4572 0.385765" pos="0 0 0.385765" type="box" rgba="0.16 0.24 0.32 1"  conaffinity="32" contype="32" condim='1' friction='0.99 0.99 0.99' priority="1"/> -->
-        </body>
 
-
-
-        <!--  ================= box left ================= /-->
-        <body name="box_left" pos="2 1.4 0" euler="0 0 1.57" >
-            <geom name="t1" material="MatGnd" type="box" pos="0.5 0.9 0.9" size="1.5 0.3 0.05" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" condim='1' priority="1"/>
-            <geom name="t2" material="MatGnd" type="box" pos="0.5 0.9 1.3" size="1.5 0.3 0.05" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" friction='0.99 0.99 0.99'  priority="1"/>
-            <geom name="t3" material="MatGnd" type="box" pos="0.5 0.6 1.1" size="0.2 1.5 0.05" euler="1.5707 0 1.5707" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" friction='0.99 0.99 0.99'  priority="1"/>
-            <geom name="t4" material="MatGnd" type="box" pos="0.5 1.2 1.1" size="0.2 1.5 0.05" euler="1.5707 0 1.5707" rgba=".6 .6 .5 0.4" conaffinity="32" contype="32" friction='0.99 0.99 0.99'  priority="1"/>
+        <!-- obstacles -->
+        <body name="obstacles" pos="0 0 0">
+            <include file="obstacles.xml"/>
         </body>
 
         <!-- Robot: gen3 -->
-        <body name="Base_Link"  pos="0.8 -0.0381 0.78106" quat="0.707 0 0 -0.707">
+        <body name="Base_Link"  pos="0.0 0.0 0.8" euler="0 0 0">
              <!-- table slide --> 
         <!-- <body name="Base_Link"  pos="0.4064 -0.508 0.77153" quat="0 0 0 1"> -->
         <!-- <body name="Base_Link"  pos="0 0 0.78106" quat="0.707 0 0 -0.707"> -->
@@ -60,18 +47,17 @@
             <body name="Shoulder_Link" pos="6.1995e-05 0 0.17" quat="-3.67321e-06 -1 0 0">
                 <!-- <inertial pos="-2.3e-05 -0.010364 -0.07336" quat="0.707051 0.0451246 -0.0453544 0.704263" mass="1.37735" fullinertia="0.00457 0.004831 0.001409 -1E-06 -2E-06 -0.000448"/> -->
                 <inertial pos="-2.3e-05 -0.010364 -0.07336" mass="1.37735" fullinertia="0.00457 0.004831 0.001409 -1E-06 -2E-06 -0.000448"/>
-                <joint name="Actuator1" pos="0 0 0" axis="0 0 1"/>
+                <joint name="Actuator1" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
                 <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Shoulder_Link" conaffinity="32" contype="32"/>
 
                 <body name="HalfArm1_Link" pos="0 0.005375 -0.12838" quat="0.707105 0.707108 0 0">
                     <inertial pos="-4.4e-05 -0.09958 -0.013278" quat="0.482348 0.516286 -0.516862 0.483366" mass="1.16367" diaginertia="0.0113017 0.011088 0.00102532"/>
-                    <!-- <joint name="Actuator2" pos="0 0 0" axis="0 0 1" limited="true" range="-2.2 2.2"/> -->
-                    <joint name="Actuator2" pos="0 0 0" axis="0 0 1"/>
+                    <joint name="Actuator2" pos="0 0 0" axis="0 0 1" limited="true" range="-2.2 2.2"/>
                     <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="HalfArm1_Link" conaffinity="32" contype="32"/>
 
                     <body name="HalfArm2_Link" pos="0 -0.21038 -0.006375" quat="0.707105 -0.707108 0 0">
                         <inertial pos="-4.4e-05 -0.006641 -0.117892" quat="0.706144 0.0213722 -0.0209128 0.707437" mass="1.16366" diaginertia="0.0111633 0.010932 0.00100671"/>
-                        <joint name="Actuator3" pos="0 0 0" axis="0 0 1"/>
+                        <joint name="Actuator3" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283" />
                         <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="HalfArm2_Link" conaffinity="32" contype="32"/>
 
                         <body name="ForeArm_Link" pos="0 0.006375 -0.21038" quat="0.707105 0.707108 0 0">
@@ -82,20 +68,19 @@
 
                             <body name="SphericalWrist1_Link" pos="0 -0.20843 -0.006375" quat="0.707105 -0.707108 0 0">
                                 <inertial pos="1e-06 -0.009432 -0.063883" quat="0.703558 0.0707492 -0.0707492 0.703558" mass="0.678106" diaginertia="0.00165901 0.001596 0.000346988"/>
-                                <joint name="Actuator5" pos="0 0 0" axis="0 0 1"/>
+                                <joint name="Actuator5" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
                                 <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="SphericalWrist1_Link" conaffinity="32" contype="32"/>
                                 <site name="SphericalWrist1_Link" type="sphere" size="1e-3" pos="0 0 6e-3" group="2" rgba="0 1 0 1" />
 
                                 <body name="SphericalWrist2_Link" pos="0 0.00017505 -0.10593" quat="0.707105 0.707108 0 0">
                                     <inertial pos="1e-06 -0.045483 -0.00965" quat="0.44426 0.550121 -0.550121 0.44426" mass="0.678106" diaginertia="0.00170087 0.001641 0.00035013"/>
-                                    <!-- <joint name="Actuator6" pos="0 0 0" axis="0 0 1" limited="true" range="-2.05 2.05"/> -->
-                                    <joint name="Actuator6" pos="0 0 0" axis="0 0 1"/>
+                                    <joint name="Actuator6" pos="0 0 0" axis="0 0 1" limited="true" range="-2.05 2.05"/>
                                     <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="SphericalWrist2_Link" conaffinity="32" contype="32"/>
                                     <site name="SphericalWrist2_Link" type="sphere" size="1e-3" pos="0 0 6e-3" group="2" rgba="0 1 0 1" />
 
                                     <body name="Bracelet_Link" pos="0 -0.10593 -0.00017505" quat="0.707105 -0.707108 0 0">
                                         <inertial pos="-0.000281 -0.011402 -0.03108" quat="0.592556 0.413116 -0.393675 0.568536" mass="0.500657" diaginertia="0.000650457 0.00056985 0.000310694"/>
-                                        <joint name="Actuator7" pos="0 0 0" axis="0 0 1"/>
+                                        <joint name="Actuator7" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
                                         <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Bracelet_Link" conaffinity="32" contype="32"/>
                                         <site name="Bracelet_Link" type="sphere" size="1e-3" pos="0 0 6e-3" group="2" rgba="0 1 0 1" />
 
@@ -107,13 +92,13 @@
 
                                             <body name="Hebi_Proximal_Link" pos="0.02255 0 0.0683" quat="0.0 0.707107 0.0 0.707107">
                                                 <inertial pos="0.02088 0.01 -0.0675" mass="0.79" fullinertia="0.00058 0.00787 0.00777 -0.0000112 0.000768 0.0000114"/>
-                                                <joint name="Actuator8" pos="0 0 0" axis="0 0 1"/>
+                                                <joint name="Actuator8" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
                                                 <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Hebi_Proximal_Link" conaffinity="32" contype="32"/>
                                                 <site name="Hebi_Proximal_Link" type="sphere" size="1e-3" pos="0 0 6e-3" group="2" rgba="0 1 0 1" />
 
                                                 <body name="Hebi_Distal_Link" pos="0.2755 0 -0.04505" quat="0.0 1.0 0.0 0.0">
                                                     <inertial pos="0.0675 0.0000038 0.01412" mass="0.2144" fullinertia="0.000076 0.00135 0.00136 0.0 -0.000086 0.0"/>
-                                                    <joint name="Actuator9" pos="0 0 0" axis="0 0 1"/>
+                                                    <joint name="Actuator9" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
                                                     <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Hebi_Distal_Link" conaffinity="32" contype="32"/>
                                                     <site name="Hebi_Distal_Link" type="sphere" size="1e-3" pos="0 0 6e-3" group="2" rgba="0 1 0 1" />
                                                 </body>
@@ -157,6 +142,16 @@
 
     <!-- Key frames -->
     <keyframe>
+        <!-- st -->
+        <!-- tucked -->
+        <!-- <key qpos='-1.66505 -0.502656 0 2.5 0 -1.97921 0 2.04204 -1.13098'/> -->
+        <!-- <key qpos='0 -1.056 0 2.20676 0 -1.8655 0 2.45037 -1.38226'/> -->
+
+        <!-- go -->
+        <!-- <key qpos='0 1.694 0 -0.53886 0 -1.0865 0 1.31943 0'/>         -->
+        <key qpos='-0.12566 1.694 0 -0.3849 0 -1.0865 -1.31943 0.69113 -0.6283'/>
+        <!-- contact w/ floor -->
+        <!-- <key qpos='-1.08185 1.29511 -1.84601 -0.874937 1.67882 -0.0678655 -1.29137 0.115967 0.14333'/> -->
     </keyframe>
 
 </mujoco>
