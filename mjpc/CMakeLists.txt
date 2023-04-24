@@ -234,6 +234,55 @@ target_link_libraries(
 )
 target_include_directories(threadpool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+
+set(LIBMJPC_INCLUDES
+    common/EigenTypes.h
+    states/state.h
+    states/include.h
+    agent.h
+    trajectory.h
+    utilities.h
+    tasks/tasks.h
+    tasks/acrobot/acrobot.h
+    tasks/cartpole/cartpole.h
+    tasks/hand/hand.h
+    tasks/humanoid/stand/stand.h
+    tasks/humanoid/tracking/tracking.h
+    tasks/humanoid/walk/walk.h
+    tasks/manipulation/common.h
+    tasks/manipulation/manipulation.h
+    tasks/panda/panda.h
+    tasks/particle/particle.h
+    tasks/planar_pusher/planar_pusher.h
+    tasks/quadrotor/quadrotor.h
+    tasks/quadruped/quadruped.h
+    tasks/swimmer/swimmer.h
+    tasks/walker/walker.h
+    planners/planner.h
+    planners/policy.h
+    planners/include.h
+    planners/cost_derivatives.h
+    planners/linear_solve.h
+    planners/model_derivatives.h
+    planners/sampling/planner.h
+    planners/sampling/policy.h
+    planners/gradient/gradient.h
+    planners/gradient/planner.h
+    planners/gradient/policy.h
+    planners/gradient/settings.h
+    planners/gradient/spline_mapping.h
+    planners/ilqg/backward_pass.h
+    planners/ilqg/boxqp.h
+    planners/ilqg/planner.h
+    planners/ilqg/policy.h
+    planners/ilqg/settings.h
+    planners/ilqs/planner.h
+    planners/mjpc_opt/planner.h
+    norm.h
+    task.h
+    insat_task.h
+)
+
 set(LIBMJPC_SOURCES
   states/state.cc
   states/include.cc
@@ -256,6 +305,7 @@ set(LIBMJPC_SOURCES
   tasks/quadruped/quadruped.cc
   tasks/swimmer/swimmer.cc
   tasks/walker/walker.cc
+  tasks/insat/gen3_hebi/gen3_hebi.cc
   planners/planner.cc
   planners/include.cc
   planners/cost_derivatives.cc
@@ -277,58 +327,10 @@ set(LIBMJPC_SOURCES
   insat_task.cc
 )
 
-set(LIBMJPC_INCLUDES
-  common/EigenTypes.h
-  states/state.h
-  states/include.h
-  agent.h
-  trajectory.h
-  utilities.h
-  tasks/tasks.h
-  tasks/acrobot/acrobot.h
-  tasks/cartpole/cartpole.h
-  tasks/hand/hand.h
-  tasks/humanoid/stand/stand.h
-  tasks/humanoid/tracking/tracking.h
-  tasks/humanoid/walk/walk.h
-  tasks/manipulation/common.h
-  tasks/manipulation/manipulation.h
-  tasks/panda/panda.h
-  tasks/particle/particle.h
-  tasks/planar_pusher/planar_pusher.h
-  tasks/quadrotor/quadrotor.h
-  tasks/quadruped/quadruped.h
-  tasks/swimmer/swimmer.h
-  tasks/walker/walker.h
-  planners/planner.h
-  planners/policy.h
-  planners/include.h
-  planners/cost_derivatives.h
-  planners/linear_solve.h
-  planners/model_derivatives.h
-  planners/sampling/planner.h
-  planners/sampling/policy.h
-  planners/gradient/gradient.h
-  planners/gradient/planner.h
-  planners/gradient/policy.h
-  planners/gradient/settings.h
-  planners/gradient/spline_mapping.h
-  planners/ilqg/backward_pass.h
-  planners/ilqg/boxqp.h
-  planners/ilqg/planner.h
-  planners/ilqg/policy.h
-  planners/ilqg/settings.h
-  planners/ilqs/planner.h
-  planners/mjpc_opt/planner.h
-  norm.h
-  task.h
-  insat_task.h
-)
-
 add_library(
   libmjpc STATIC
-  ${LIBMJPC_SOURCES}
   ${LIBMJPC_INCLUDES}
+  ${LIBMJPC_SOURCES}
 )
 set_target_properties(libmjpc PROPERTIES OUTPUT_NAME mjpc PUBLIC_HEADER "${LIBMJPC_INCLUDES}")
 target_compile_options(libmjpc PUBLIC ${MJPC_COMPILE_OPTIONS})
