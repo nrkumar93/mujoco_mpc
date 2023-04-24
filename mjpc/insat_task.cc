@@ -44,6 +44,14 @@ InsatTask::InsatTask() {
 
 }
 
+std::string InsatTask::Name() const {
+  return "Insat Task";
+}
+
+std::string InsatTask::XmlPath() const {
+  return "/path/to/xml";
+}
+
 void InsatTask::Reset(const mjModel* model, const mjData* data) {
   Task::Reset(model);
 
@@ -59,6 +67,18 @@ void InsatTask::Reset(const mjModel* model, const mjData* data) {
   goal_.Allocate(model);
   goal_.Reset();
   goal_.Set(model, data);
+}
+
+void InsatTask::Residual(const mjModel *model, const mjData *data, double *residual) const {
+
+}
+
+void InsatTask::setStart(const VecDf &start) {
+
+}
+
+void InsatTask::setGoal(const VecDf &goal) {
+
 }
 
 }

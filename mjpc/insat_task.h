@@ -55,13 +55,7 @@ class InsatTask : public Task
 
   std::string Name() const override;
   std::string XmlPath() const override;
-  // ------- Residuals for cartpole task ------
-  //   Number of residuals: 4
-  //     Residual (0):
-  //     Residual (1):
-  //     Residual (2):
-  //     Residual (3):
-  // ------------------------------------------
+
   void Residual(const mjModel* model, const mjData* data,
                 double* residual) const override;
 
