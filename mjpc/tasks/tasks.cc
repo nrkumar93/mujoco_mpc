@@ -26,6 +26,7 @@
 #include "mjpc/tasks/panda/panda.h"
 #include "mjpc/tasks/manipulation/manipulation.h"
 #include "mjpc/tasks/planar_pusher/planar_pusher.h"
+#include "mjpc/tasks/insat/gen3_hebi/gen3_hebi.h"
 // DEEPMIND INTERNAL IMPORT
 #include "mjpc/tasks/particle/particle.h"
 #include "mjpc/tasks/quadrotor/quadrotor.h"
@@ -45,6 +46,7 @@ std::vector<std::shared_ptr<Task>> GetTasks() {
     std::make_shared<humanoid::Walk>(),
     std::make_shared<manipulation::Bring>(),
     std::make_shared<PlanarPusher>(),
+    std::make_shared<Gen3Hebi>(),
     // DEEPMIND INTERNAL TASKS
     std::make_shared<Panda>(),
     std::make_shared<Particle>(),
