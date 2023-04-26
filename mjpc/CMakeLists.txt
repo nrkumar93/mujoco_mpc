@@ -433,6 +433,7 @@ target_link_libraries(run_manipulation
         pthread)
 target_include_directories(run_manipulation PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+### opt_test
 add_executable(opt_test
         test/insat/opt_test.cc
         )
@@ -441,6 +442,16 @@ target_link_libraries(opt_test
         )
 target_include_directories(opt_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 target_compile_options(opt_test PUBLIC ${MJPC_COMPILE_OPTIONS})
+
+### opt_test
+add_executable(mjpc_pp
+        test/insat/mjpc_pp.cc
+        )
+target_link_libraries(mjpc_pp
+        libmjpc
+        )
+target_include_directories(mjpc_pp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_compile_options(mjpc_pp PUBLIC ${MJPC_COMPILE_OPTIONS})
 
 add_subdirectory(tasks)
 
