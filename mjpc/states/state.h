@@ -47,6 +47,11 @@ class State {
   // set state from data
   void Set(const mjModel* model, const mjData* data);
 
+  // set state from values
+  void Set(const mjModel* model, const mjData* data,
+           const double* state, const double* mocap,
+           const double* userdata, double time);
+
   // copy into destination
   void CopyTo(double* dst_state, double* dst_mocap, double* dst_userdata, double* time) const;
 
