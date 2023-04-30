@@ -89,6 +89,37 @@ mjModel* LoadTestModel(std::string_view path) {
   return model;
 }
 
+MatDf linInterp(const VecDf& p1, const VecDf& p2, int N)
+{
+  MatDf traj(N, p1.size());
+  for (int i=0; i<N; ++i)
+  {
+    double j = i/static_cast<double>(N);
+    traj.row(i) = p1*(1-j) + p2*j;
+  }
+  traj.bottomRows(1) = p2.transpose();
+
+  return traj;
+}
+
+MatDf upsample(const MatDf& traj, double dx)
+{
+  MatDf traj_up(0, traj.cols());
+  for (int i=0; i<traj.rows()-1; ++i)
+  {
+    VecDf p1 = traj.row(i);
+    VecDf p2 = traj.row(i+1);
+
+    int N = static_cast<int>((p2-p1).norm()/dx);
+    traj_up.conservativeResize(traj_up.rows()+N, traj.cols());
+    traj_up.bottomRows(N) = linInterp(p1, p2, N);
+  }
+
+  return traj_up;
+}
+
+
+
 // test iLQG planner on particle task
 int main() {
   using namespace mjpc;
@@ -121,14 +152,17 @@ int main() {
   planner.Reset(kMaxTrajectoryHorizon);
 
   // ----- settings ----- //
-  int iterations = 100;
+  int iterations = 50;
   double horizon = 1.0;
   double timestep = 0.01;
+  bool upsampling = false;
   int steps =
       mju_max(mju_min(horizon / timestep + 1, kMaxTrajectoryHorizon), 1);
   model->opt.timestep = timestep;
 
   MatDf path = loadEigenFromFile<MatDf>("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/pinsat/logs/pp/traj.txt", ' ');
+  if (upsampling)
+    path = upsample(path, 0.2);
 
   // threadpool
   ThreadPool pool(1);
@@ -161,25 +195,29 @@ int main() {
     planner.SetState(state);
     // ---- optimize ----- //
     VecDf prev_soln(model->nq + model->nv);
-    VecDf soln(model->nq + model->nv);
+    VecDf soln_end(model->nq + model->nv);
+    VecDf soln_st(model->nq + model->nv);
     prev_soln.setZero();
     for (int k = 0; k < iterations; k++) {
       planner.OptimizePolicy(steps, pool);
 
       for (int l=0; l<(model->nq + model->nv); ++l)
       {
-        soln(l) = planner.candidate_policy[0]
+        soln_st(l) = planner.candidate_policy[0]
+            .trajectory.states[l];
+        soln_end(l) = planner.candidate_policy[0]
             .trajectory.states[(steps - 1) * (model->nq + model->nv)+l];
       }
 
-//      if ((prev_soln-soln).norm() < 1e-3)
+//      if ((prev_soln-soln_end).norm() < 1e-3)
 //      {
 //        break;
 //      }
-//      prev_soln = soln;
+//      prev_soln = soln_end;
     }
-    s1.tail(model->nv) = soln.tail(model->nv);
-    std::cout << "vel at end of " << i << "th traj: " << soln.tail(model->nv).transpose() << std::endl;
+    s1.tail(model->nv) = soln_end.tail(model->nv);
+    std::cout << "vel at start of " << i << "th traj: " << soln_st.tail(model->nv).transpose() << std::endl;
+    std::cout << "vel at end of " << i << "th traj: " << soln_end.tail(model->nv).transpose() << std::endl;
 
     if (i==0)
       warm_policy = planner.candidate_policy[0];
@@ -205,46 +243,52 @@ int main() {
 
   // ----- iLQG planner WARM ----- //
   // ---- warm optimize ----- //
-//  std::cout << std::endl;
-//  std::cout << "NOW WARM STARTING" << std::endl;
-//  std::cout << std::endl;
-//
-//  iLQGPlanner warm_planner;
-//  warm_planner.Initialize(model, task);
-//  warm_planner.Allocate();
-//  warm_planner.Reset(warm_policy.trajectory.horizon);
-//
-//  state.Reset();
-//  state.Set(model, data);
-//  state.Set(model, data, path.row(0).data(), mocap, userdata, timestep);
-//
-//  auto goal = path.row(path.rows()-1);
-//  for (int j=0; j<model->nq; ++j)
-//  {
-//    task.parameters[j] = goal(j);
-//    std::cout << task.parameters[j] << "\t";
-//  }
-//  std::cout << std::endl;
-//
-//  warm_planner.SetState(state);
-//
-//  warm_planner.policy = warm_policy;
-//  for (int i = 0; i < iterations; i++) {
-//    warm_planner.OptimizePolicy(warm_policy.trajectory.horizon, pool);
-//  }
-//
-//  op_traj.setZero();
-//  for (int j=0; j<warm_planner.candidate_policy[0].trajectory.horizon; ++j)
-//  {
-//    for (int l=0; l<(model->nq); ++l)
-//    {
-//      op_traj(j, l) = warm_planner.candidate_policy[0]
-//          .trajectory.states[j * (model->nq + model->nv)+l];
-//    }
-//  }
-//
-//  std::string op_traj_file = "/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/pinsat/logs/pp/op_traj.txt";
-//  writeEigenToFile(op_traj_file, op_traj);
+  std::cout << std::endl;
+  std::cout << "NOW WARM STARTING" << std::endl;
+  std::cout << std::endl;
+
+  iLQGPlanner warm_planner;
+  warm_planner.Initialize(model, task);
+  warm_planner.Allocate();
+  warm_planner.Reset(warm_policy.trajectory.horizon);
+
+  VecDf full_state(model->nq + model->nv);
+  full_state.head(model->nq) = path.row(0);
+  full_state.tail(model->nv).setZero();
+
+  state.Reset();
+  state.Set(model, data);
+  state.Set(model, data, full_state.data(), mocap, userdata, timestep);
+  std::cout << "start state: " << path.row(0) << std::endl;
+
+  auto goal = path.row(path.rows()-1);
+  for (int j=0; j<model->nq; ++j)
+  {
+    task.parameters[j] = goal(j);
+    std::cout << task.parameters[j] << "\t";
+  }
+  std::cout << std::endl;
+
+  warm_planner.SetState(state);
+
+  warm_planner.policy = warm_policy;
+  for (int i = 0; i < iterations; i++) {
+//  for (int i = 0; i < 10; i++) {
+    warm_planner.OptimizePolicy(warm_policy.trajectory.horizon, pool);
+  }
+
+  op_traj.setZero();
+  for (int j=0; j<warm_planner.candidate_policy[0].trajectory.horizon; ++j)
+  {
+    for (int l=0; l<(model->nq); ++l)
+    {
+      op_traj(j, l) = warm_planner.candidate_policy[0]
+          .trajectory.states[j * (model->nq + model->nv)+l];
+    }
+  }
+
+  std::string op_traj_file = "/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/pinsat/logs/pp/op_traj.txt";
+  writeEigenToFile(op_traj_file, op_traj);
 
 
 // delete data
