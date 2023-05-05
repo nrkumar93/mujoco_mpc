@@ -399,6 +399,7 @@ set(PINSAT_SOURCES
   pinsat/src/planners/insat/opt/MjpcOpt.cpp
 )
 
+# run_robot_nav_2d
 add_executable(run_robot_nav_2d
         pinsat/examples/robot_nav_2d/run_robot_nav_2d.cpp
         pinsat/examples/robot_nav_2d/RobotNav2dActions.cpp
@@ -410,6 +411,7 @@ target_link_libraries(run_robot_nav_2d
         pthread)
 target_include_directories(run_robot_nav_2d PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
+# run_insat_nav_2d
 add_executable(run_insat_nav_2d
         pinsat/examples/insat/robot_nav_2d/run_insat_nav_2d.cpp
         pinsat/examples/insat/robot_nav_2d/InsatNav2dActions.cpp
@@ -421,17 +423,31 @@ target_link_libraries(run_insat_nav_2d
         pthread)
 target_include_directories(run_insat_nav_2d PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-add_executable(run_manipulation
-        pinsat/examples/manipulation/run_manipulation.cpp
+# run_manipulation
+#add_executable(run_manipulation
+#        pinsat/examples/manipulation/run_manipulation.cpp
+#        pinsat/examples/manipulation/ManipulationActions.cpp
+#        pinsat/examples/manipulation/bfs3d.cpp
+#        ${PINSAT_SOURCES})
+#target_link_libraries(run_manipulation
+#        mujoco::mujoco
+#        libmjpc
+#        ${drake_LIBRARIES}
+#        pthread)
+#target_include_directories(run_manipulation PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
+# run_ptc
+add_executable(run_ptc
+        pinsat/examples/manipulation/run_ptc.cpp
         pinsat/examples/manipulation/ManipulationActions.cpp
         pinsat/examples/manipulation/bfs3d.cpp
         ${PINSAT_SOURCES})
-target_link_libraries(run_manipulation
+target_link_libraries(run_ptc
         mujoco::mujoco
         libmjpc
         ${drake_LIBRARIES}
         pthread)
-target_include_directories(run_manipulation PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+target_include_directories(run_ptc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 ### opt_test
 add_executable(opt_test
