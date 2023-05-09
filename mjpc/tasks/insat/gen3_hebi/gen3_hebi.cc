@@ -47,10 +47,10 @@ namespace mjpc {
     }
 
     // ---------- jacc ----------
-    for (int i=0; i<model->na; ++i)
-    {
-      residual[idx++] = data->qacc[i];
-    }
+//    for (int i=0; i<model->na; ++i)
+//    {
+//      residual[idx++] = data->qacc[i];
+//    }
 
   // ---------- frc_con ----------
 //    for (int i=0; i<model->nv; ++i)
