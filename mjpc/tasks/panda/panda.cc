@@ -55,6 +55,13 @@ void Panda::Residual(const mjModel* model, const mjData* data,
   mju_sub3(residual + counter, box2, target2);
   counter += 3;
 
+  // ---------- frc_con ----------
+  for (int i=0; i<5; ++i)
+  {
+//    residual[counter++] = 1.0/data->qfrc_constraint[i];
+    residual[counter++] = -data->qfrc_constraint[i];
+  }
+
   // sensor dim sanity check
   // TODO: use this pattern everywhere and make this a utility function
   int user_sensor_dim = 0;
