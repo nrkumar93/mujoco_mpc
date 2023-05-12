@@ -1,0 +1,79 @@
+<mujoco model="gen3_flip_task">
+    <include file="../../common.xml"/>
+
+    <worldbody>
+        <body name="target" mocap="true" pos="1.38387873e+00 6.49878448e-01 4.21433382e-01"
+              quat="-8.55906578e-01 -1.61769762e-01 4.82633395e-01 -9.12111766e-02">
+            <geom name="goaltop" type="box" pos="0.01 0 0" size="0.01 0.1 0.8" rgba="0 .9 0 0.2" conaffinity="0"
+                  contype="0"/>
+            <geom name="goalbottom" type="box" pos="-0.01 0 0" size="0.01 0.1 0.8" rgba=".9 0 0 0.2" conaffinity="0"
+                  contype="0"/>
+        </body>
+    </worldbody>
+
+    <!-- THIS FOLLOWING FILE SHOULD CONTAIN THE LAST BODY (EE_LINK or SIMILAR) -->
+    <include file="gen3_flip.xml"/>
+
+    <size memory="10M"/>
+
+    <custom>
+        <numeric name="agent_planner" data="1"/>
+        <numeric name="agent_horizon" data="1.0"/>
+        <numeric name="agent_timestep" data="0.01"/>
+        <numeric name="sampling_sample_width" data="0.01"/>
+        <numeric name="sampling_control_width" data="0.015"/>
+        <numeric name="sampling_spline_points" data="10"/>
+        <numeric name="sampling_exploration" data="0.5"/>
+        <numeric name="gradient_spline_points" data="10"/>
+        <numeric name="ilqg_representation" data="2"/>
+        <numeric name="residual_J1" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J2" data="1.694     -2.2 2.2"/>
+        <numeric name="residual_J3" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J4" data="-0.53886  -2.5656 2.5656"/>
+        <numeric name="residual_J5" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J6" data="-1.0865   -2.05 2.05"/>
+        <numeric name="residual_J7" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J8" data="1.31943   -6.283 6.283"/>
+        <numeric name="residual_J9" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J10" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J11" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J12" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J13" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J14" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J15" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J16" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J17" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J18" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J19" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J20" data="0.0       -6.283 6.283"/>
+        <numeric name="residual_J21" data="0.0       -6.283 6.283"/>
+    </custom>
+
+    <!-- Key frames -->
+    <keyframe>
+        <!-- <key qpos='0.669835 2.20036 -0.737188 0.134578 0.806092 -0.741584 -0.122731'/> -->
+
+        <!-- st -->
+        <key name="home" qpos='0.433784 2.09343 -0.0331225 -0.574959 3.19071 -0.563885 -2.92445'/>
+
+        <!-- go -->
+        <!--        <key qpos='-0.446715 2.09292 -3.12757 0.523251 3.17324 0.504308 2.87436'/>-->
+
+        <!-- mid -->
+        <!--        <key qpos='-0.108174 2.20045 -0.127583 0.204921 3.13877 0.846521 -3.03646'/>-->
+
+    </keyframe>
+
+
+    <sensor>
+        <user name="jpos" dim="7" user="2 99.0 0 100.0 0.01"/>
+        <user name="jvel" dim="7" user="2 10.0 0 10.0 0.01"/>
+        <!--        <user name="Distance" dim="3" user="2 30 0 100 0.04" />-->
+        <!--        <user name="jacc" dim="9" user="2 5.0 0 10.0 0.01"/>-->
+        <user name="qfrc" dim="7" user="2 2.0 0 10.0 0.01"/>
+        <!--        <user name="acc" dim="4" user="2 5.0 0 10.0 0.01"/>-->
+        <framepos name="object" objtype="body" objname="object"/>
+        <framepos name="target" objtype="body" objname="target"/>
+    </sensor>
+
+</mujoco>

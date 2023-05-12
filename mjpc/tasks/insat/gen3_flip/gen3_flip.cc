@@ -1,0 +1,92 @@
+// Copyright 2022 DeepMind Technologies Limited
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "gen3_flip.h"
+
+#include <cmath>
+#include <string>
+
+#include <mujoco/mujoco.h>
+#include "mjpc/task.h"
+#include "mjpc/utilities.h"
+
+namespace mjpc {
+  std::string Gen3Flip::XmlPath() const {
+    return GetModelPath("insat/gen3_flip/task.xml");
+  }
+  std::string Gen3Flip::Name() const { return "Gen3Flip"; }
+
+// ------- Residuals for planar_pusher task ------
+//     load_pos: load should at goal position
+// ------------------------------------------
+  void Gen3Flip::Residual(const mjModel* model, const mjData* data,
+                          double* residual) const {
+    int idx = 0;
+
+    // ---------- jpos ----------
+    for (int i=0; i<model->nq; ++i)
+    {
+      residual[idx++] = data->qpos[i] - parameters[i];
+    }
+
+    // ---------- jvel ----------
+    for (int i=0; i<model->nv; ++i)
+    {
+      residual[idx++] = data->qvel[i];
+    }
+
+    // ---------- jacc ----------
+//    for (int i=0; i<model->na; ++i)
+//    {
+//      residual[idx++] = data->qacc[i];
+//    }
+
+  // ---------- frc_con ----------
+    auto effort = NetEffort(model, data);
+    for (int i=0; i<model->nv; ++i)
+    {
+      residual[idx++] = effort(i);
+    }
+
+    // ---------- acc ----------
+//    for (int i=0; i<model->nv; ++i)
+//    {
+////      residual[6+i] = data->qacc[i];
+//      residual[6+i] = data->qfrc_smooth[i] + data->qfrc_constraint[i];
+//    }
+
+//    double* target = mjpc::SensorByName(model, data, "target");
+//    double* object = mjpc::SensorByName(model, data, "object");
+//    mju_sub(residual + model->nv, object, target, 3);
+
+  }
+
+  VecDf Gen3Flip::NetEffort(const mjModel *model, const mjData *data) const {
+
+    VecDf effort(model->nv);
+    mju_add(effort.data(), data->qfrc_smooth, data->qfrc_constraint, model->nv);
+    for (int i=0; i<model->nv; ++i)
+    {
+      if ((effort(i) > 0 && data->qfrc_smooth[i] < 0) ||
+          (effort(i) < 0 && data->qfrc_smooth[i] > 0) ||
+          std::fabs(effort(i)) < 1e-6) {
+        effort(i) = 0;
+      }
+    }
+    return effort;
+  }
+
+
+
+}  // namespace mjpc
