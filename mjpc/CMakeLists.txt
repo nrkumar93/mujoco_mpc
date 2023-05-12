@@ -306,6 +306,7 @@ set(LIBMJPC_SOURCES
   tasks/swimmer/swimmer.cc
   tasks/walker/walker.cc
   tasks/insat/gen3_hebi/gen3_hebi.cc
+  tasks/insat/gen3_flip/gen3_flip.cc
   planners/planner.cc
   planners/include.cc
   planners/cost_derivatives.cc
