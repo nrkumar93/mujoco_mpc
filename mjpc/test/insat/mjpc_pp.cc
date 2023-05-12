@@ -41,6 +41,7 @@
 #include "mjpc/task.h"
 #include "mjpc/test/testdata/particle_residual.h"
 #include "mjpc/tasks/insat/gen3_hebi/gen3_hebi.h"
+#include "mjpc/tasks/insat/gen3_flip/gen3_flip.h"
 #include "mjpc/threadpool.h"
 #include "mjpc/array_safety.h"
 #include "mjpc/common/EigenTypes.h"
@@ -55,7 +56,8 @@ mjModel* model;
 State state;
 
 // task
-Gen3Hebi task;
+//Gen3Hebi task;
+Gen3Flip task;
 
 // sensor
 extern "C" {
@@ -126,7 +128,8 @@ int main() {
 
   // load model
 //  model = LoadTestModel("particle_task.xml");
-  model = LoadTestModel("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/tasks/insat/gen3_hebi/task.xml");
+//  model = LoadTestModel("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/tasks/insat/gen3_hebi/task.xml");
+  model = LoadTestModel("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/tasks/insat/gen3_flip/task.xml");
   task.Reset(model);
 
   // create data
@@ -153,7 +156,8 @@ int main() {
 
   // ----- settings ----- //
   int iterations = 50;
-  double horizon = 1.0;
+  double horizon = 0.75;
+//  double horizon = 0.05;
   double timestep = 0.01;
   bool upsampling = false;
   int steps =
@@ -272,7 +276,7 @@ int main() {
   warm_planner.SetState(state);
 
   warm_planner.policy = warm_policy;
-  for (int i = 0; i < iterations; i++) {
+  for (int i = 0; i < iterations*2; i++) {
 //  for (int i = 0; i < 10; i++) {
     warm_planner.OptimizePolicy(warm_policy.trajectory.horizon, pool);
   }
