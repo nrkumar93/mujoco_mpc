@@ -24,7 +24,7 @@
 namespace mjpc {
 
 // maximum trajectory length
-inline constexpr int kMaxTrajectoryHorizon = 1024;
+inline constexpr int kMaxTrajectoryHorizon = 4096;
 
 // time series of states, actions, costs, residual, times, parameters, noise,
 // traces
