@@ -34,6 +34,11 @@ namespace mjpc {
                   double* residual) const override;
 
     VecDf NetEffort(const mjModel* model, const mjData* data) const;
+
+
+    Vec3f getEEPosition(const mjModel* model, const mjData* data) const;
+
+    Vec4f getEERotation(const mjModel* model, const mjData* data) const;
   };
 }  // namespace mjpc
 

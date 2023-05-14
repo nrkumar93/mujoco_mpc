@@ -37,8 +37,18 @@ namespace mjpc {
     // ---------- jpos ----------
     for (int i=0; i<model->nq; ++i)
     {
-      residual[idx++] = data->qpos[i] - parameters[i];
+      residual[idx++] = parameters[i] - data->qpos[i];
     }
+
+//  auto ee_pos = getEEPosition(model, data);
+//  auto ee_rot = getEERotation(model, data);
+//  residual[idx++] = 1.3 - ee_pos[0];
+//  residual[idx++] = 0.65 - ee_pos[1];
+//  residual[idx++] = 0.421 - ee_pos[2];
+//  residual[idx++] = -0.8556 - ee_rot[0];
+//  residual[idx++] = -0.161 - ee_rot[1];
+//  residual[idx++] = 0.482 - ee_rot[2];
+//  residual[idx++] = -0.0912 - ee_rot[3];
 
     // ---------- jvel ----------
     for (int i=0; i<model->nv; ++i)
@@ -87,6 +97,21 @@ namespace mjpc {
     return effort;
   }
 
+  Vec3f Gen3Flip::getEEPosition(const mjModel *model, const mjData *data) const
+  {
+    VecDf ee_pos(3);
+    mju_copy(ee_pos.data(), data->xpos + 3*(model->nbody-1), 3);
+
+    return ee_pos;
+  }
+
+  Vec4f Gen3Flip::getEERotation(const mjModel *model, const mjData *data) const
+  {
+    VecDf ee_rot(4);
+    mju_copy(ee_rot.data(), data->xquat + 4 * (model->nbody - 1), 4);
+
+    return ee_rot;
+  }
 
 
 }  // namespace mjpc
