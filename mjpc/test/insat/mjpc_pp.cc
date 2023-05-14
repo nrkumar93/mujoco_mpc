@@ -156,7 +156,7 @@ int main() {
 
   // ----- settings ----- //
   int iterations = 50;
-  double horizon = 0.75;
+  double horizon = 1.1;
 //  double horizon = 0.05;
   double timestep = 0.01;
   bool upsampling = false;
@@ -165,6 +165,10 @@ int main() {
   model->opt.timestep = timestep;
 
   MatDf path = loadEigenFromFile<MatDf>("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/pinsat/logs/pp/traj.txt", ' ');
+  VecDf init_vel(model->nv);
+  init_vel.setZero();
+//  init_vel << -0.226081232795585, -0.493956309040456, -0.499425388612798, 0.0313000826490541, -0.336311513861378, 0.244498225608607, 0.761775556154479;
+
   if (upsampling)
     path = upsample(path, 0.2);
 
@@ -175,8 +179,9 @@ int main() {
   double *userdata;
   iLQGPolicy warm_policy;
 
-//  MatDf op_traj(steps*(path.rows()-1), model->nq + model->nv);
-  MatDf op_traj(steps*(path.rows()-1), model->nq);
+//  MatDf op_traj(steps*(path.rows()-1), model->nq);
+  MatDf op_traj(steps*(path.rows()-1), 1 + model->nq + model->nv + model->nu);
+  op_traj.setZero();
   VecDf s1(model->nq + model->nv);
   VecDf s2(model->nq + model->nv);
   s1.setZero();
@@ -185,6 +190,11 @@ int main() {
   {
     s1.head(model->nq) = path.row(i);
     s2.head(model->nq) = path.row(i+1);
+
+    if (i==0)
+    {
+      s1.tail(model->nv) = init_vel;
+    }
 
     state.Set(model, data, s1.data(), mocap, userdata, timestep);
 
@@ -230,13 +240,19 @@ int main() {
 
     for (int j=0; j<steps; ++j)
     {
-//      for (int l=0; l<(model->nq + model->nv); ++l)
-      for (int l=0; l<(model->nq); ++l)
+      op_traj(i*steps+j, 0) = planner.candidate_policy[0].trajectory.times[j];
+//      for (int l=0; l<(model->nq); ++l)
+      for (int l=0; l<(model->nq + model->nv); ++l)
       {
-//        op_traj(i*steps+j, l) = planner.candidate_policy[0]
-//            .trajectory.states[j * (model->nq + model->nv)+l];
-        op_traj(i*steps+j, l) = planner.candidate_policy[0]
+        op_traj(i*steps+j, 1+l) = planner.candidate_policy[0]
             .trajectory.states[j * (model->nq + model->nv)+l];
+//        op_traj(i*steps+j, l) = planner.candidate_policy[0]
+//            .trajectory.states[j * (model->nq + model->nv + model->na)+l];
+      }
+      for (int l=0; l<(model->nu); ++l)
+      {
+        op_traj(i*steps+j, 1+(model->nq + model->nv)+l) = planner.candidate_policy[0]
+            .trajectory.actions[j * (model->nu)+l];
       }
     }
 
@@ -258,7 +274,7 @@ int main() {
 
   VecDf full_state(model->nq + model->nv);
   full_state.head(model->nq) = path.row(0);
-  full_state.tail(model->nv).setZero();
+  full_state.tail(model->nv) = init_vel;
 
   state.Reset();
   state.Set(model, data);
@@ -284,10 +300,19 @@ int main() {
   op_traj.setZero();
   for (int j=0; j<warm_planner.candidate_policy[0].trajectory.horizon; ++j)
   {
-    for (int l=0; l<(model->nq); ++l)
+    op_traj(j, 0) = planner.candidate_policy[0].trajectory.times[j];
+//    for (int l=0; l<(model->nq); ++l)
+    for (int l=0; l<(model->nq + model->nv); ++l)
     {
-      op_traj(j, l) = warm_planner.candidate_policy[0]
+      op_traj(j, 1+l) = warm_planner.candidate_policy[0]
           .trajectory.states[j * (model->nq + model->nv)+l];
+//      op_traj(j, l) = planner.candidate_policy[0]
+//          .trajectory.states[j * (model->nq + model->nv + model->na)+l];
+    }
+    for (int l=0; l<(model->nu); ++l)
+    {
+      op_traj(j, 1+(model->nq + model->nv)+l) = warm_planner.candidate_policy[0]
+          .trajectory.actions[j * (model->nu)+l];
     }
   }
 
