@@ -38,6 +38,7 @@ namespace mjpc {
     for (int i=0; i<model->nq; ++i)
     {
       residual[idx++] = parameters[i] - data->qpos[i];
+//      residual[idx++] = data->qpos[i] - parameters[i];
     }
 
 //  auto ee_pos = getEEPosition(model, data);
@@ -56,25 +57,12 @@ namespace mjpc {
       residual[idx++] = data->qvel[i];
     }
 
-    // ---------- jacc ----------
-//    for (int i=0; i<model->na; ++i)
-//    {
-//      residual[idx++] = data->qacc[i];
-//    }
-
   // ---------- frc_con ----------
     auto effort = NetEffort(model, data);
     for (int i=0; i<model->nv; ++i)
     {
       residual[idx++] = effort(i);
     }
-
-    // ---------- acc ----------
-//    for (int i=0; i<model->nv; ++i)
-//    {
-////      residual[6+i] = data->qacc[i];
-//      residual[6+i] = data->qfrc_smooth[i] + data->qfrc_constraint[i];
-//    }
 
 //    double* target = mjpc::SensorByName(model, data, "target");
 //    double* object = mjpc::SensorByName(model, data, "object");
@@ -84,15 +72,18 @@ namespace mjpc {
 
   VecDf Gen3Flip::NetEffort(const mjModel *model, const mjData *data) const {
 
-    VecDf effort(model->nv);
-    mju_add(effort.data(), data->qfrc_smooth, data->qfrc_constraint, model->nv);
-    for (int i=0; i<model->nv; ++i)
+    VecDf effort(model->nq);
+    mju_add(effort.data(), data->qfrc_smooth, data->qfrc_constraint, model->nq);
+    for (int i=0; i<model->nq; ++i)
     {
       if ((effort(i) > 0 && data->qfrc_smooth[i] < 0) ||
           (effort(i) < 0 && data->qfrc_smooth[i] > 0) ||
           std::fabs(effort(i)) < 1e-6) {
         effort(i) = 0;
       }
+//      else {
+//        effort(i) = data->qfrc_smooth[i];
+//      }
     }
     return effort;
   }

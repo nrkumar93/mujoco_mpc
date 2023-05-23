@@ -156,7 +156,7 @@ int main() {
 
   // ----- settings ----- //
   int iterations = 50;
-  double horizon = 1.1;
+  double horizon = 4.1;
 //  double horizon = 0.05;
   double timestep = 0.01;
   bool upsampling = false;
