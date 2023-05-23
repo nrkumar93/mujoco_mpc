@@ -45,21 +45,26 @@ void Panda::Residual(const mjModel* model, const mjData* data,
   mju_sub3(residual + counter, hand, box);
   counter += 3;
 
+//  // bring
+//  double* box1 = SensorByName(model, data, "box1");
+//  double* target1 = SensorByName(model, data, "target1");
+//  mju_sub3(residual + counter, box1, target1);
+//  counter += 3;
+//  double* box2 = SensorByName(model, data, "box2");
+//  double* target2 = SensorByName(model, data, "target2");
+//  mju_sub3(residual + counter, box2, target2);
+//  counter += 3;
+
   // bring
-  double* box1 = SensorByName(model, data, "box1");
-  double* target1 = SensorByName(model, data, "target1");
-  mju_sub3(residual + counter, box1, target1);
-  counter += 3;
-  double* box2 = SensorByName(model, data, "box2");
-  double* target2 = SensorByName(model, data, "target2");
-  mju_sub3(residual + counter, box2, target2);
+  double* target = SensorByName(model, data, "target");
+  mju_sub3(residual + counter, box, target);
   counter += 3;
 
   // ---------- frc_con ----------
+  auto effort = NetEffort(model, data);
   for (int i=0; i<5; ++i)
   {
-//    residual[counter++] = 1.0/data->qfrc_constraint[i];
-    residual[counter++] = -data->qfrc_constraint[i];
+    residual[counter++] = effort(i);
   }
 
   // sensor dim sanity check
@@ -89,14 +94,43 @@ void Panda::Transition(const mjModel* model, mjData* data) {
   if (data->time > 0 && bring_dist < .015) {
     // box:
     absl::BitGen gen_;
-    data->qpos[0] = absl::Uniform<double>(gen_, -.5, .5);
-    data->qpos[1] = absl::Uniform<double>(gen_, -.5, .5);
-    data->qpos[2] = .05;
+//    data->qpos[0] = absl::Uniform<double>(gen_, -.5, .5);
+//    data->qpos[1] = absl::Uniform<double>(gen_, -.5, .5);
+//    data->qpos[2] = .05;
+//
+//    // target:
+//    data->mocap_pos[0] = absl::Uniform<double>(gen_, -.5, .5);
+//    data->mocap_pos[1] = absl::Uniform<double>(gen_, -.5, .5);
+//    data->mocap_pos[2] = absl::Uniform<double>(gen_, .03, 1);
+//    data->mocap_quat[0] = absl::Uniform<double>(gen_, -1, 1);
+//    data->mocap_quat[1] = absl::Uniform<double>(gen_, -1, 1);
+//    data->mocap_quat[2] = absl::Uniform<double>(gen_, -1, 1);
+//    data->mocap_quat[3] = absl::Uniform<double>(gen_, -1, 1);
+//    mju_normalize4(data->mocap_quat);
+
+//    std::mt19937 gen_(0);  //here you could set the seed, but std::random_device already does that
+    double x_min = .5;
+    double x_max = 1;
+    double y_min = .5;
+    double y_max = 1;
+    do
+    {
+      data->qpos[0] = absl::Uniform<double>(gen_, -x_max, x_max);
+    } while (data->qpos[0] > x_min || data->qpos[0] < -x_min);
+    do {
+      data->qpos[1] = absl::Uniform<double>(gen_, -y_max, y_max);
+    } while (data->qpos[1] > y_min || data->qpos[1] < -y_min);
+    data->qpos[2] = .3;
 
     // target:
-    data->mocap_pos[0] = absl::Uniform<double>(gen_, -.5, .5);
-    data->mocap_pos[1] = absl::Uniform<double>(gen_, -.5, .5);
-    data->mocap_pos[2] = absl::Uniform<double>(gen_, .03, 1);
+    do
+    {
+      data->mocap_pos[0] = absl::Uniform<double>(gen_, -x_max, x_max);
+    } while (data->mocap_pos[0] > x_min || data->mocap_pos[0] < -x_min);
+    do {
+      data->mocap_pos[1] = absl::Uniform<double>(gen_, -y_max, y_max);
+    } while (data->mocap_pos[1] > y_min || data->mocap_pos[1] < -y_min);
+    data->mocap_pos[2] = absl::Uniform<double>(gen_, .24, 1);
     data->mocap_quat[0] = absl::Uniform<double>(gen_, -1, 1);
     data->mocap_quat[1] = absl::Uniform<double>(gen_, -1, 1);
     data->mocap_quat[2] = absl::Uniform<double>(gen_, -1, 1);
@@ -104,4 +138,20 @@ void Panda::Transition(const mjModel* model, mjData* data) {
     mju_normalize4(data->mocap_quat);
   }
 }
+
+VecDf Panda::NetEffort(const mjModel *model, const mjData *data) const {
+
+  VecDf effort(model->nq);
+  mju_add(effort.data(), data->qfrc_smooth, data->qfrc_constraint, model->nq);
+  for (int i=0; i<model->nq; ++i)
+  {
+    if ((effort(i) > 0 && data->qfrc_smooth[i] < 0) ||
+        (effort(i) < 0 && data->qfrc_smooth[i] > 0) ||
+        std::fabs(effort(i)) < 1e-6) {
+      effort(i) = 0;
+    }
+  }
+  return effort;
+}
+
 }  // namespace mjpc

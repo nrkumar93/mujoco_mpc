@@ -18,15 +18,22 @@
 #include <string>
 #include <mujoco/mujoco.h>
 #include "mjpc/task.h"
+#include "mjpc/common/EigenTypes.h"
+//#include <absl/random/random.h>
 
 namespace mjpc {
 class Panda : public Task {
  public:
+//  Panda() : gen_(0) {}
   std::string Name() const override;
   std::string XmlPath() const override;
   void Residual(const mjModel* model, const mjData* data,
                 double* residual) const override;
   void Transition(const mjModel* model, mjData* data) override;
+  VecDf NetEffort(const mjModel* model, const mjData* data) const;
+
+//  absl::BitGen gen_;
+//  std::mt19937 gen_;
 };
 }  // namespace mjpc
 
