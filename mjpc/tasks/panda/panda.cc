@@ -93,7 +93,7 @@ void Panda::Transition(const mjModel* model, mjData* data) {
   // reset:
   if (data->time > 0 && bring_dist < .015) {
     // box:
-    absl::BitGen gen_;
+//    absl::BitGen gen_;
 //    data->qpos[0] = absl::Uniform<double>(gen_, -.5, .5);
 //    data->qpos[1] = absl::Uniform<double>(gen_, -.5, .5);
 //    data->qpos[2] = .05;
