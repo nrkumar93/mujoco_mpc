@@ -27,13 +27,27 @@ class Panda : public Task {
   Panda() : gen_(0) {}
   std::string Name() const override;
   std::string XmlPath() const override;
-  void Residual(const mjModel* model, const mjData* data,
-                double* residual) const override;
-  void Transition(const mjModel* model, mjData* data) override;
+  class ResidualFn : public mjpc::BaseResidualFn {
+   public:
+    explicit ResidualFn(const Panda* task) : mjpc::BaseResidualFn(task) {}
+    void Residual(const mjModel* model, const mjData* data,
+                  double* residual) const override;
+  };
+  Panda() : residual_(this) {}
+  void TransitionLocked(mjModel* model, mjData* data) override;
   VecDf NetEffort(const mjModel* model, const mjData* data) const;
 
 //  absl::BitGen gen_;
   std::mt19937 gen_;
+
+ protected:
+  std::unique_ptr<mjpc::ResidualFn> ResidualLocked() const override {
+    return std::make_unique<ResidualFn>(this);
+  }
+  ResidualFn* InternalResidual() override { return &residual_; }
+
+ private:
+  ResidualFn residual_;
 };
 }  // namespace mjpc
 

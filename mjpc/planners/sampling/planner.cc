@@ -14,14 +14,13 @@
 
 #include "mjpc/planners/sampling/planner.h"
 
-#include <absl/random/random.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <mutex>
 #include <shared_mutex>
 
+#include <absl/random/random.h>
 #include "mjpc/array_safety.h"
 #include "mjpc/planners/sampling/policy.h"
 #include "mjpc/states/state.h"
@@ -75,6 +74,7 @@ void SamplingPlanner::Allocate() {
   // policy
   int num_max_parameter = model->nu * kMaxTrajectoryHorizon;
   policy.Allocate(model, *task, kMaxTrajectoryHorizon);
+  previous_policy.Allocate(model, *task, kMaxTrajectoryHorizon);
 
   // scratch
   parameters_scratch.resize(num_max_parameter);
@@ -84,6 +84,7 @@ void SamplingPlanner::Allocate() {
   noise.resize(kMaxTrajectory * (model->nu * kMaxTrajectoryHorizon));
 
   // trajectory and parameters
+  winner = -1;
   for (int i = 0; i < kMaxTrajectory; i++) {
     trajectory[i].Initialize(num_state, model->nu, task->num_residual,
                              task->num_trace, kMaxTrajectoryHorizon);
@@ -105,6 +106,7 @@ void SamplingPlanner::Reset(int horizon) {
 
   // policy parameters
   policy.Reset(horizon);
+  previous_policy.Reset(horizon);
 
   // scratch
   std::fill(parameters_scratch.begin(), parameters_scratch.end(), 0.0);
@@ -134,17 +136,18 @@ void SamplingPlanner::Reset(int horizon) {
 }
 
 // set state
-void SamplingPlanner::SetState(State& state) {
+void SamplingPlanner::SetState(const State& state) {
   state.CopyTo(this->state.data(), this->mocap.data(), this->userdata.data(),
                &this->time);
 }
 
-// optimize nominal policy using random sampling
-void SamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
+int SamplingPlanner::OptimizePolicyCandidates(int ncandidates, int horizon,
+                                              ThreadPool& pool) {
   // if num_trajectory_ has changed, use it in this new iteration.
   // num_trajectory_ might change while this function runs. Keep it constant
   // for the duration of this function.
   int num_trajectory = num_trajectory_;
+  ncandidates = std::min(ncandidates, num_trajectory);
   ResizeMjData(model, pool.NumThreads());
 
   // ----- rollout noisy policies ----- //
@@ -154,40 +157,46 @@ void SamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
   // simulate noisy policies
   this->Rollouts(num_trajectory, horizon, pool);
 
-  // ----- compare rollouts ----- //
-  int best_rollout = 0;
-  double best_return = trajectory[best_rollout].total_return;
-
-  // random search
-  for (int i = 1; i < num_trajectory; i++) {
-    if (trajectory[i].total_return < trajectory[best_rollout].total_return) {
-      best_rollout = i;
-    }
+  // sort candidate policies and trajectories by score
+  trajectory_order.clear();
+  trajectory_order.reserve(num_trajectory);
+  for (int i = 0; i < num_trajectory; i++) {
+    trajectory_order.push_back(i);
   }
 
-  // set winner
-  winner = best_rollout;
+  // sort so that the first ncandidates elements are the best candidates, and
+  // the rest are in an unspecified order
+  std::partial_sort(
+      trajectory_order.begin(), trajectory_order.begin() + ncandidates,
+      trajectory_order.end(), [trajectory = trajectory](int a, int b) {
+        return trajectory[a].total_return < trajectory[b].total_return;
+      });
 
   // stop timer
-  rollouts_compute_time = std::chrono::duration_cast<std::chrono::microseconds>(
-                       std::chrono::steady_clock::now() - rollouts_start)
-                       .count();
+  rollouts_compute_time = GetDuration(rollouts_start);
+
+  return ncandidates;
+}
+
+// optimize nominal policy using random sampling
+void SamplingPlanner::OptimizePolicy(int horizon, ThreadPool& pool) {
+  // resample nominal policy to current time
+  this->UpdateNominalPolicy(horizon);
+
+  OptimizePolicyCandidates(1, horizon, pool);
 
   // ----- update policy ----- //
   // start timer
   auto policy_update_start = std::chrono::steady_clock::now();
 
-  // update
-  this->UpdateNominalPolicy(horizon);
+  CopyCandidateToPolicy(0);
 
-  // improvement
+  // improvement: compare nominal to winner
+  double best_return = trajectory[0].total_return;
   improvement = mju_max(best_return - trajectory[winner].total_return, 0.0);
 
   // stop timer
-  policy_update_compute_time =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::steady_clock::now() - policy_update_start)
-        .count();
+  policy_update_compute_time = GetDuration(policy_update_start);
 }
 
 // compute trajectory using nominal policy
@@ -206,9 +215,13 @@ void SamplingPlanner::NominalTrajectory(int horizon, ThreadPool& pool) {
 
 // set action from policy
 void SamplingPlanner::ActionFromPolicy(double* action, const double* state,
-                                       double time) {
+                                       double time, bool use_previous) {
   const std::shared_lock<std::shared_mutex> lock(mtx_);
-  policy.Action(action, state, time);
+  if (use_previous) {
+    previous_policy.Action(action, state, time);
+  } else {
+    policy.Action(action, state, time);
+  }
 }
 
 // update policy via resampling
@@ -274,10 +287,7 @@ void SamplingPlanner::AddNoiseToPolicy(int i) {
   }
 
   // end timer
-  IncrementAtomic(noise_compute_time,
-                  std::chrono::duration_cast<std::chrono::microseconds>(
-                      std::chrono::steady_clock::now() - noise_start)
-                      .count());
+  IncrementAtomic(noise_compute_time, GetDuration(noise_start));
 }
 
 // compute candidate trajectories
@@ -326,7 +336,7 @@ void SamplingPlanner::Rollouts(int num_trajectory, int horizon,
 
 // return trajectory with best total return
 const Trajectory* SamplingPlanner::BestTrajectory() {
-  return &trajectory[winner];
+  return winner >= 0 ? &trajectory[winner] : nullptr;
 }
 
 // visualize planner-specific traces
@@ -407,7 +417,8 @@ void SamplingPlanner::GUI(mjUI& ui) {
 
 // planner-specific plots
 void SamplingPlanner::Plots(mjvFigure* fig_planner, mjvFigure* fig_timer,
-                            int planner_shift, int timer_shift, int planning) {
+                            int planner_shift, int timer_shift, int planning,
+                            int* shift) {
   // ----- planner ----- //
   double planner_bounds[2] = {-6.0, 6.0};
 
@@ -446,6 +457,33 @@ void SamplingPlanner::Plots(mjvFigure* fig_planner, mjvFigure* fig_timer,
   mju::strcpy_arr(fig_timer->linename[0 + timer_shift], "Noise");
   mju::strcpy_arr(fig_timer->linename[1 + timer_shift], "Rollout");
   mju::strcpy_arr(fig_timer->linename[2 + timer_shift], "Policy Update");
+
+  // planner shift
+  shift[0] += 1;
+
+  // timer shift
+  shift[1] += 3;
 }
 
+double SamplingPlanner::CandidateScore(int candidate) const {
+  return trajectory[trajectory_order[candidate]].total_return;
+}
+
+// set action from candidate policy
+void SamplingPlanner::ActionFromCandidatePolicy(double* action, int candidate,
+                                                const double* state,
+                                                double time) {
+  candidate_policy[trajectory_order[candidate]].Action(action, state, time);
+}
+
+void SamplingPlanner::CopyCandidateToPolicy(int candidate) {
+  // set winner
+  winner = trajectory_order[candidate];
+
+  {
+    const std::shared_lock<std::shared_mutex> lock(mtx_);
+    previous_policy = policy;
+    policy = candidate_policy[winner];
+  }
+}
 }  // namespace mjpc

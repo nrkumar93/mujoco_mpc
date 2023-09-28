@@ -22,13 +22,17 @@
 
 #include "mjpc/planners/gradient/spline_mapping.h"
 #include "mjpc/planners/ilqg/planner.h"
-#include "mjpc/planners/linear_solve.h"
 #include "mjpc/planners/planner.h"
 #include "mjpc/planners/sampling/planner.h"
 #include "mjpc/states/state.h"
 #include "mjpc/trajectory.h"
 
 namespace mjpc {
+
+enum iLQSPlanners : int {
+  kSampling = 0,
+  kiLQG,
+};
 
 // planner for iLQS
 class iLQSPlanner : public Planner {
@@ -51,7 +55,7 @@ class iLQSPlanner : public Planner {
   void Reset(int horizon) override;
 
   // set state
-  void SetState(State& state) override;
+  void SetState(const State& state) override;
 
   // optimize nominal policy using iLQS
   void OptimizePolicy(int horizon, ThreadPool& pool) override;
@@ -61,7 +65,7 @@ class iLQSPlanner : public Planner {
 
   // set action from policy
   void ActionFromPolicy(double* action, const double* state,
-                        double time) override;
+                        double time, bool use_previous = false) override;
 
   // return trajectory with best total return
   const Trajectory* BestTrajectory() override;
@@ -74,7 +78,7 @@ class iLQSPlanner : public Planner {
 
   // planner-specific plots
   void Plots(mjvFigure* fig_planner, mjvFigure* fig_timer, int planner_shift,
-             int timer_shift, int planning) override;
+             int timer_shift, int planning, int* shift) override;
 
   // ----- planners ----- //
   SamplingPlanner sampling;
@@ -95,6 +99,7 @@ class iLQSPlanner : public Planner {
 
   // online policy for returning actions
   int active_policy;
+  int previous_active_policy;
 };
 
 }  // namespace mjpc

@@ -34,6 +34,8 @@ class Trajectory {
   Trajectory() = default;
   Trajectory(const Trajectory& other) = default;
   Trajectory& operator=(const Trajectory& other) = default;
+  Trajectory(Trajectory&& other) = default;
+  Trajectory& operator=(Trajectory&& other) = default;
 
   // ----- methods -----//
 
@@ -53,6 +55,13 @@ class Trajectory {
           policy,
       const Task* task, const mjModel* model, mjData* data, const double* state,
       double time, const double* mocap, const double* userdata, int steps);
+
+  void NoisyRollout(
+      std::function<void(double* action, const double* state, double time)>
+          policy,
+      const Task* task, const mjModel* model, mjData* data, const double* state,
+      double time, const double* mocap, const double* userdata, double xfrc_std,
+      double xfrc_rate, int steps);
 
   // simulate model forward in time with discrete-time indexed policy
   void RolloutDiscrete(

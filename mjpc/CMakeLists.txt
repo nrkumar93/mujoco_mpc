@@ -335,11 +335,16 @@ add_library(
 )
 set_target_properties(libmjpc PROPERTIES OUTPUT_NAME mjpc PUBLIC_HEADER "${LIBMJPC_INCLUDES}")
 target_compile_options(libmjpc PUBLIC ${MJPC_COMPILE_OPTIONS})
+target_compile_definitions(libmjpc PRIVATE MJSIMULATE_STATIC)
 target_link_libraries(
   libmjpc
+  absl::any_invocable
   absl::flat_hash_map
   absl::random_random
+  glfw
+  lodepng
   mujoco::mujoco
+  mujoco::platform_ui_adapter
   threadpool
   Threads::Threads
   mujoco::platform_ui_adapter
@@ -348,12 +353,7 @@ target_include_directories(libmjpc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(
   mjpc
-  app.cc
-  app.h
   main.cc
-  simulate.cc
-  simulate.h
-  $<TARGET_OBJECTS:mujoco::platform_ui_adapter>
 )
 target_link_libraries(
   mjpc
@@ -361,11 +361,8 @@ target_link_libraries(
   absl::flags_parse
   absl::random_random
   absl::strings
-  glfw
   libmjpc
-  lodepng
   mujoco::mujoco
-  mujoco::platform_ui_adapter
   threadpool
   Threads::Threads
 )

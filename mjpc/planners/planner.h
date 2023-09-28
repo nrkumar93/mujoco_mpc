@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef MJPC_PLANNERS_OPTIMIZER_H_
-#define MJPC_PLANNERS_OPTIMIZER_H_
+#ifndef MJPC_PLANNERS_PLANNER_H_
+#define MJPC_PLANNERS_PLANNER_H_
 
 #include <mujoco/mujoco.h>
 
@@ -43,7 +43,7 @@ class Planner {
   virtual void Reset(int horizon) = 0;
 
   // set state
-  virtual void SetState(State& state) = 0;
+  virtual void SetState(const State& state) = 0;
 
   // optimize nominal policy
   virtual void OptimizePolicy(int horizon, ThreadPool& pool) = 0;
@@ -53,9 +53,10 @@ class Planner {
 
   // set action from policy
   virtual void ActionFromPolicy(double* action, const double* state,
-                                double time) = 0;
+                                double time, bool use_previous = false) = 0;
 
-  // return trajectory with best total return
+  // return trajectory with best total return, or nullptr if no planning
+  // iteration has completed
   virtual const Trajectory* BestTrajectory() = 0;
 
   // visualize planner-specific traces
@@ -66,12 +67,35 @@ class Planner {
 
   // planner-specific plots
   virtual void Plots(mjvFigure* fig_planner, mjvFigure* fig_timer,
-                     int planner_shift, int timer_shift, int planning) = 0;
+                     int planner_shift, int timer_shift, int planning,
+                     int* shift) = 0;
 
   std::vector<UniqueMjData> data_;
   void ResizeMjData(const mjModel* model, int num_threads);
 };
 
+// additional optional interface for planners that can produce several policy
+// proposals
+class RankedPlanner : public Planner {
+ public:
+  virtual ~RankedPlanner() = default;
+  // optimizes policies, but rather than picking the best, generate up to
+  // ncandidates. returns number of candidates created. only called
+  // from the planning thread.
+  virtual int OptimizePolicyCandidates(int ncandidates, int horizon,
+                                        ThreadPool& pool) = 0;
+  // returns the total return for the nth candidate (or another score to
+  // minimize). only called from the planning thread.
+  virtual double CandidateScore(int candidate) const = 0;
+
+  // set action from candidate policy. only called from the planning thread.
+  virtual void ActionFromCandidatePolicy(double* action, int candidate,
+                                         const double* state, double time) = 0;
+
+  // sets the nth candidate to the active policy.
+  virtual void CopyCandidateToPolicy(int candidate) = 0;
+};
+
 }  // namespace mjpc
 
-#endif  // MJPC_PLANNERS_OPTIMIZER_H_
+#endif  // MJPC_PLANNERS_PLANNER_H_
