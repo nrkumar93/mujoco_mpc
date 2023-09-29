@@ -24,16 +24,25 @@
 namespace mjpc {
   class PlanarPusher : public Task {
   public:
+    PlanarPusher() : residual_(this) {}
     std::string Name() const override;
     std::string XmlPath() const override;
-    // ------- Residuals for cartpole task ------
-    //   Number of residuals: 1
-    //     Residual (0): load distance from goal
-    // ------------------------------------------
-    void Residual(const mjModel* model, const mjData* data,
-                  double* residual) const override;
 
-    Vec3f getEEPosition(const mjModel* model, const mjData* data) const;
+    class ResidualFn : public mjpc::BaseResidualFn {
+    public:
+      explicit ResidualFn(const PlanarPusher* task) : mjpc::BaseResidualFn(task) {}
+      void Residual(const mjModel* model, const mjData* data,
+                    double* residual) const override;
+      Vec3f getEEPosition(const mjModel* model, const mjData* data) const;
+    };
+  protected:
+    std::unique_ptr<mjpc::ResidualFn> ResidualLocked() const override {
+      return std::make_unique<ResidualFn>(this);
+    }
+    ResidualFn* InternalResidual() override { return &residual_; }
+
+  private:
+    ResidualFn residual_;
   };
 }  // namespace mjpc
 

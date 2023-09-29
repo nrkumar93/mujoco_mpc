@@ -24,16 +24,26 @@
 namespace mjpc {
   class Gen3Hebi : public Task {
   public:
+    Gen3Hebi() : residual_(this) {}
     std::string Name() const override;
     std::string XmlPath() const override;
-    // ------- Residuals for cartpole task ------
-    //   Number of residuals: 1
-    //     Residual (0): load distance from goal
-    // ------------------------------------------
-    void Residual(const mjModel* model, const mjData* data,
-                  double* residual) const override;
+    class ResidualFn : public mjpc::BaseResidualFn {
+    public:
+      explicit ResidualFn(const Gen3Hebi* task) : mjpc::BaseResidualFn(task) {}
+      void Residual(const mjModel* model, const mjData* data,
+                    double* residual) const override;
+      VecDf NetEffort(const mjModel* model, const mjData* data) const;
+    };
 
     Vec3f getEEPosition(const mjModel* model, const mjData* data) const;
+  protected:
+    std::unique_ptr<mjpc::ResidualFn> ResidualLocked() const override {
+      return std::make_unique<ResidualFn>(this);
+    }
+    ResidualFn* InternalResidual() override { return &residual_; }
+
+  private:
+    ResidualFn residual_;
   };
 }  // namespace mjpc
 

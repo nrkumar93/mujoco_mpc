@@ -55,7 +55,7 @@ class GradientPlanner : public Planner {
   void Reset(int horizon) override;
 
   // set state
-  void SetState(State& state) override;
+  void SetState(const State& state) override;
 
   // optimize nominal policy via gradient descent
   void OptimizePolicy(int horizon, ThreadPool& pool) override;
@@ -64,8 +64,8 @@ class GradientPlanner : public Planner {
   void NominalTrajectory(int horizon, ThreadPool& pool) override;
 
   // compute action from policy
-  void ActionFromPolicy(double* action, const double* state,
-                        double time) override;
+  void ActionFromPolicy(double* action, const double* state, double time,
+                        bool use_previous = false) override;
 
   // resample nominal policy for current time
   void ResamplePolicy(int horizon);
@@ -84,7 +84,7 @@ class GradientPlanner : public Planner {
 
   // planner-specific plots
   void Plots(mjvFigure* fig_planner, mjvFigure* fig_timer, int planner_shift,
-             int timer_shift, int planning) override;
+             int timer_shift, int planning, int* shift) override;
 
   // ----- members ----- //
   mjModel* model;
@@ -98,6 +98,7 @@ class GradientPlanner : public Planner {
 
   // policy
   GradientPolicy policy;
+  GradientPolicy previous_policy;
   GradientPolicy candidate_policy[kMaxTrajectory];
 
   // scratch

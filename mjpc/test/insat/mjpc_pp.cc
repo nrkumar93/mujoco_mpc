@@ -34,7 +34,7 @@
  * \date 4/24/23
 */
 
-#include "mjpc/cmake-build-release/_deps/mujoco-src/include/mujoco/mujoco.h"
+#include "mjpc/../cmake-build-release/_deps/mujoco-src/include/mujoco/mujoco.h"
 #include <cassert>
 #include "mjpc/planners/ilqg/planner.h"
 #include "mjpc/states/state.h"
@@ -42,38 +42,40 @@
 #include "mjpc/test/testdata/particle_residual.h"
 #include "mjpc/tasks/insat/gen3_hebi/gen3_hebi.h"
 #include "mjpc/tasks/insat/gen3_flip/gen3_flip.h"
+#include "mjpc/tasks/insat/gen3_realflip/gen3_realflip.h"
 #include "mjpc/threadpool.h"
 #include "mjpc/array_safety.h"
 #include "mjpc/common/EigenTypes.h"
 
 namespace mjpc {
-namespace {
+  namespace {
 
 // model
-mjModel* model;
+    mjModel* model;
 
 // state
-State state;
+    State state;
 
 // task
 //Gen3Hebi task;
-Gen3Flip task;
+//Gen3Flip task;
+Gen3RealFlip task;
 
 // sensor
-extern "C" {
-void sensor(const mjModel* m, mjData* d, int stage);
-}
+    extern "C" {
+    void sensor(const mjModel* m, mjData* d, int stage);
+    }
 
 // sensor callback
-void sensor(const mjModel* model, mjData* data, int stage) {
-  if (stage == mjSTAGE_ACC) {
-    task.Residual(model, data, data->sensordata);
-  }
-}
+    void sensor(const mjModel* model, mjData* data, int stage) {
+      if (stage == mjSTAGE_ACC) {
+        task.Residual(model, data, data->sensordata);
+      }
+    }
 
 
 
-}  // namespace
+  }  // namespace
 }  // namespace mjpc
 
 mjModel* LoadTestModel(std::string_view path) {
@@ -129,7 +131,8 @@ int main() {
   // load model
 //  model = LoadTestModel("particle_task.xml");
 //  model = LoadTestModel("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/tasks/insat/gen3_hebi/task.xml");
-  model = LoadTestModel("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/tasks/insat/gen3_flip/task.xml");
+//  model = LoadTestModel("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/tasks/insat/gen3_flip/task.xml");
+  model = LoadTestModel("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/tasks/insat/gen3_realflip/task.xml");
   task.Reset(model);
 
   // create data
@@ -156,8 +159,8 @@ int main() {
 
   // ----- settings ----- //
   int iterations = 50;
-  double horizon = 4.1;
-//  double horizon = 0.05;
+  double horizon = 1.5;
+//  double horizon = 0.4;
   double timestep = 0.01;
   bool upsampling = false;
   int steps =
@@ -167,7 +170,7 @@ int main() {
   MatDf path = loadEigenFromFile<MatDf>("/home/gaussian/cmu_ri_phd/phd_research/mujoco_mpc/mjpc/pinsat/logs/pp/traj.txt", ' ');
   VecDf init_vel(model->nv);
   init_vel.setZero();
-//  init_vel << -0.226081232795585, -0.493956309040456, -0.499425388612798, 0.0313000826490541, -0.336311513861378, 0.244498225608607, 0.761775556154479;
+//  init_vel << 0.114036929862352, -0.679612257877588, 1.12437089668517, 1.26100555377345, -0.939202180704154, -0.581337305699126, -0.365689733481996;
 
   if (upsampling)
     path = upsample(path, 0.2);

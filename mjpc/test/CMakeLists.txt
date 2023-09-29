@@ -48,13 +48,6 @@ target_compile_definitions(load PUBLIC MJSTATIC)
 target_link_libraries(load PUBLIC mujoco::mujoco absl::core_headers absl::strings)
 target_include_directories(load PRIVATE ${mujoco_SOURCE_DIR}/include gmock)
 
-# finite difference
-add_library(finite_difference STATIC finite_difference.h finite_difference.cc)
-target_include_directories(finite_difference PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-target_compile_definitions(finite_difference PUBLIC MJSTATIC)
-target_link_libraries(finite_difference PUBLIC mujoco::mujoco)
-target_include_directories(finite_difference PRIVATE ${mujoco_SOURCE_DIR}/include gmock)
-
 # LQR
 add_library(lqr STATIC lqr.h lqr.cc)
 target_include_directories(lqr PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../..)
@@ -62,11 +55,21 @@ target_compile_definitions(lqr PUBLIC MJSTATIC)
 target_link_libraries(lqr PUBLIC mujoco::mujoco)
 target_include_directories(lqr PRIVATE ${mujoco_SOURCE_DIR}/include gmock)
 
+# simulation
+add_library(simulation STATIC simulation.h simulation.cc)
+target_include_directories(simulation PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../..)
+target_compile_definitions(simulation PUBLIC MJSTATIC)
+target_link_libraries(simulation PUBLIC mujoco::mujoco)
+target_include_directories(simulation PRIVATE ${mujoco_SOURCE_DIR}/include gmock)
+
 enable_testing()
 
-add_subdirectory(sampling_planner)
+add_subdirectory(agent)
+add_subdirectory(estimator)
 add_subdirectory(gradient_planner)
 add_subdirectory(ilqg_planner)
-add_subdirectory(tasks)
+add_subdirectory(planners/robust)
+add_subdirectory(sampling_planner)
 add_subdirectory(state)
-add_subdirectory(agent)
+add_subdirectory(tasks)
+add_subdirectory(utilities)

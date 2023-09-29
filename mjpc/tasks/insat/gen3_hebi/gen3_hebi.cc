@@ -30,14 +30,14 @@ namespace mjpc {
 // ------- Residuals for planar_pusher task ------
 //     load_pos: load should at goal position
 // ------------------------------------------
-  void Gen3Hebi::Residual(const mjModel* model, const mjData* data,
+  void Gen3Hebi::ResidualFn::Residual(const mjModel* model, const mjData* data,
                           double* residual) const {
     int idx = 0;
 
     // ---------- jpos ----------
     for (int i=0; i<model->nq; ++i)
     {
-      residual[idx++] = data->qpos[i] - parameters[i];
+      residual[idx++] = data->qpos[i] - task_->parameters[i];
     }
 
     // ---------- jvel ----------

@@ -18,20 +18,25 @@
 #include <atomic>
 #include <chrono>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
-#include <iostream>
-#include <string>
+#include <mutex>
 #include <sstream>
+#include <string>
+#include <string_view>
+#include <utility>
 
 #include <absl/container/flat_hash_map.h>
 #include <absl/strings/match.h>
 #include <absl/strings/str_join.h>
+#include <absl/strings/str_split.h>
 #include <absl/strings/strip.h>
+#include <mujoco/mjmodel.h>
 #include <mujoco/mjui.h>
 #include <mujoco/mjvisualize.h>
 #include <mujoco/mujoco.h>
+
 #include "mjpc/array_safety.h"
+#include "mjpc/estimators/include.h"
 #include "mjpc/planners/include.h"
 #include "mjpc/task.h"
 #include "mjpc/threadpool.h"
@@ -62,7 +67,7 @@ Agent::Agent(const mjModel* model, std::shared_ptr<Task> task)
   PlotReset();
 }
 
-// initialize data, settings, planners, states
+// initialize data, settings, planners, state
 void Agent::Initialize(const mjModel* model) {
   // ----- model ----- //
   if (model_) mj_deleteModel(model_);
@@ -71,8 +76,9 @@ void Agent::Initialize(const mjModel* model) {
   // planner
   planner_ = GetNumberOrDefault(0, model, "agent_planner");
 
-  // state
-  state_ = GetNumberOrDefault(0, model, "agent_state");
+  // estimator
+  estimator_ =
+      estimator_enabled ? GetNumberOrDefault(0, model, "estimator") : 0;
 
   // integrator
   integrator_ =
@@ -96,9 +102,19 @@ void Agent::Initialize(const mjModel* model) {
   }
 
   // initialize state
-  for (const auto& state : states_) {
-    state->Initialize(model);
+  state.Initialize(model);
+
+  // initialize estimator
+  if (reset_estimator) {
+    for (const auto& estimator : estimators_) {
+      estimator->Initialize(model_);
+      estimator->Reset();
+    }
   }
+
+  // initialize estimator data
+  ctrl.resize(model->nu);
+  sensor.resize(model->nsensordata);
 
   // status
   plan_enabled = false;
@@ -113,10 +129,16 @@ void Agent::Initialize(const mjModel* model) {
   // counter
   count_ = 0;
 
+  // names
   mju::strcpy_arr(this->planner_names_, kPlannerNames);
+  mju::strcpy_arr(this->estimator_names_, kEstimatorNames);
 
-  // max threads
-  max_threads_ = std::max(1, NumAvailableHardwareThreads() - 3);
+  // estimator threads
+  estimator_threads_ = estimator_enabled;
+
+  // planner threads
+  planner_threads_ =
+      std::max(1, NumAvailableHardwareThreads() - 3 - 2 * estimator_threads_);
 }
 
 // allocate memory
@@ -127,9 +149,7 @@ void Agent::Allocate() {
   }
 
   // state
-  for (const auto& state : states_) {
-    state->Allocate(model_);
-  }
+  state.Allocate(model_);
 
   // set status
   allocate_enabled = false;
@@ -138,15 +158,21 @@ void Agent::Allocate() {
   terms_.resize(ActiveTask()->num_term * kMaxTrajectoryHorizon);
 }
 
-// reset data, settings, planners, states
+// reset data, settings, planners, state
 void Agent::Reset() {
   // planner
   for (const auto& planner : planners_) {
     planner->Reset(kMaxTrajectoryHorizon);
   }
 
-  for (const auto& state : states_) {
-    state->Reset();
+  // state
+  state.Reset();
+
+  // estimator
+  if (reset_estimator) {
+    for (const auto& estimator : estimators_) {
+      estimator->Reset();
+    }
   }
 
   // cost
@@ -160,7 +186,7 @@ void Agent::Reset() {
 }
 
 void Agent::SetState(const mjData* data) {
-  ActiveState().Set(model_, data);
+  state.Set(model_, data);
 }
 
 int Agent::GetTaskIdByName(std::string_view name) const {
@@ -170,6 +196,47 @@ int Agent::GetTaskIdByName(std::string_view name) const {
     }
   }
   return -1;
+}
+
+Agent::LoadModelResult Agent::LoadModel() const {
+  // if user specified a custom model, use that.
+  mjModel* mnew = nullptr;
+  constexpr int kErrorLength = 1024;
+  char load_error[kErrorLength] = "";
+
+  if (model_override_) {
+    mnew = mj_copyModel(nullptr, model_override_.get());
+  } else {
+    // otherwise use the task's model
+    std::string filename = tasks_[gui_task_id]->XmlPath();
+    // make sure filename is not empty
+    if (filename.empty()) {
+      return {};
+    }
+
+    if (absl::StrContains(filename, ".mjb")) {
+      mnew = mj_loadModel(filename.c_str(), nullptr);
+      if (!mnew) {
+        mju::strcpy_arr(load_error, "could not load binary model");
+      }
+    } else {
+      mnew = mj_loadXML(filename.c_str(), nullptr, load_error,
+                        kErrorLength);
+      // remove trailing newline character from load_error
+      if (load_error[0]) {
+        int error_length = mju::strlen_arr(load_error);
+        if (load_error[error_length - 1] == '\n') {
+          load_error[error_length - 1] = '\0';
+        }
+      }
+    }
+  }
+  return {.model = {mnew, mj_deleteModel},
+          .error = load_error};
+}
+
+void Agent::OverrideModel(UniqueMjModel model) {
+  model_override_ = std::move(model);
 }
 
 void Agent::SetTaskList(std::vector<std::shared_ptr<Task>> tasks) {
@@ -196,7 +263,12 @@ void Agent::PlanIteration(ThreadPool* pool) {
   // plan
   if (!allocate_enabled) {
     // set state
-    ActivePlanner().SetState(ActiveState());
+    ActivePlanner().SetState(state);
+
+    // copy the task's residual function parameters into a new object, which
+    // remains constant during planning and doesn't require locking from the
+    // rollout threads
+    residual_fn_ = ActiveTask()->Residual();
 
     if (plan_enabled) {
       // planner policy
@@ -217,6 +289,9 @@ void Agent::PlanIteration(ThreadPool* pool) {
       // set timers
       agent_compute_time_ = 0.0;
     }
+
+    // release the planning residual function
+    residual_fn_.reset();
   }
 }
 
@@ -224,7 +299,7 @@ void Agent::PlanIteration(ThreadPool* pool) {
 void Agent::Plan(std::atomic<bool>& exitrequest,
                  std::atomic<int>& uiloadrequest) {
   // instantiate thread pool
-  ThreadPool pool(max_threads_);
+  ThreadPool pool(planner_threads_);
 
   // main loop
   while (!exitrequest.load()) {
@@ -234,7 +309,38 @@ void Agent::Plan(std::atomic<bool>& exitrequest,
   }  // exitrequest sent -- stop planning
 }
 
+void Agent::RunBeforeStep(StepJob job) {
+  std::lock_guard<std::mutex> lock(step_jobs_mutex_);
+  step_jobs_.push_back(std::move(job));
+}
+
+void Agent::ExecuteAllRunBeforeStepJobs(const mjModel* model, mjData* data) {
+  while (true) {
+      StepJob step_job;
+      {
+        // only hold the lock while reading from the queue and not while
+        // executing the jobs
+        std::lock_guard<std::mutex> lock(step_jobs_mutex_);
+        if (step_jobs_.empty()) {
+          break;
+        }
+        step_job = std::move(step_jobs_.front());
+        step_jobs_.pop_front();
+      }
+      step_job(this, model, data);
+    }
+}
+
 int Agent::SetParamByName(std::string_view name, double value) {
+  if (absl::StartsWith(name, "residual_")) {
+    name = absl::StripPrefix(name, "residual_");
+  }
+  if (absl::StartsWith(name, "selection_")) {
+    mju_warning(
+        "SetParamByName should not be used with selection_ parameters. Use "
+        "SetSelectionParamByName.");
+    return -1;
+  }
   int shift = 0;
   for (int i = 0; i < model_->nnumeric; i++) {
     std::string_view numeric_name(model_->names + model_->name_numericadr[i]);
@@ -247,6 +353,77 @@ int Agent::SetParamByName(std::string_view name, double value) {
         shift++;
       }
     }
+  }
+  return -1;
+}
+
+int Agent::SetSelectionParamByName(std::string_view name,
+                                   std::string_view value) {
+  if (absl::StartsWith(name, "residual_select_")) {
+    name = absl::StripPrefix(name, "residual_select_");
+  }
+  if (absl::StartsWith(name, "selection_")) {
+    name = absl::StripPrefix(name, "selection_");
+  }
+  int shift = 0;
+  for (int i = 0; i < model_->nnumeric; i++) {
+    std::string_view numeric_name(model_->names + model_->name_numericadr[i]);
+    if (absl::StartsWith(numeric_name, "residual_select_")) {
+      if (absl::EqualsIgnoreCase(
+              absl::StripPrefix(numeric_name, "residual_select_"), name)) {
+        ActiveTask()->parameters[shift] =
+            ResidualParameterFromSelection(model_, name, value);
+        return i;
+      } else {
+        shift++;
+      }
+    }
+  }
+  return -1;
+}
+
+int Agent::SetWeightByName(std::string_view name, double value) {
+  for (int i = 0; i < model_->nsensor && model_->sensor_type[i] == mjSENS_USER;
+       i++) {
+    std::string_view sensor_name(model_->names + model_->name_sensoradr[i]);
+    if (absl::EqualsIgnoreCase(sensor_name, name)) {
+      ActiveTask()->weight[i] = value;
+      return i;
+    }
+  }
+  return -1;
+}
+
+std::vector<std::string> Agent::GetAllModeNames() const {
+  char* transition_str = GetCustomTextData(model_, "task_transition");
+  if (transition_str) {
+    // split concatenated names
+    return absl::StrSplit(transition_str, '|', absl::SkipEmpty());
+  }
+  return {"default_mode"};
+}
+
+std::string Agent::GetModeName() const {
+  std::vector<std::string> mode_names = GetAllModeNames();
+  return mode_names[ActiveTask()->mode];
+}
+
+int Agent::SetModeByName(std::string_view name) {
+  char* transition_str = GetCustomTextData(model_, "task_transition");
+  if (transition_str) {
+    std::vector<std::string> mode_names =
+        absl::StrSplit(transition_str, '|', absl::SkipEmpty());
+    for (int i = 0; i < mode_names.size(); i++) {
+      if (mode_names[i] == name) {
+        ActiveTask()->mode = i;
+        return i;
+      }
+    }
+    return -1;
+  }
+  if (name == "default_mode") {
+    ActiveTask()->mode = 0;
+    return 0;
   }
   return -1;
 }
@@ -452,36 +629,49 @@ void Agent::GUI(mjUI& ui) {
   }
 
   // ----- agent ----- //
-  mjuiDef defAgent[] = {
-      {mjITEM_SECTION, "Agent", 1, nullptr, "AP"},
-      {mjITEM_BUTTON, "Reset", 2, nullptr, " #459"},
-      {mjITEM_SELECT, "Planner", 2, &planner_, ""},
-      {mjITEM_CHECKINT, "Plan", 2, &plan_enabled, ""},
-      {mjITEM_CHECKINT, "Action", 2, &action_enabled, ""},
-      {mjITEM_CHECKINT, "Plots", 2, &plot_enabled, ""},
-      {mjITEM_CHECKINT, "Traces", 2, &visualize_enabled, ""},
-      {mjITEM_SEPARATOR, "Agent Settings", 1},
-      {mjITEM_SLIDERNUM, "Horizon", 2, &horizon_, "0 1"},
-      {mjITEM_SLIDERNUM, "Timestep", 2, &timestep_, "0 1"},
-      {mjITEM_SELECT, "Integrator", 2, &integrator_, "Euler\nRK4\nImplicit"},
-      {mjITEM_SEPARATOR, "Planner Settings", 1},
-      {mjITEM_END}};
+  mjuiDef defAgent[] = {{mjITEM_SECTION, "Agent", 1, nullptr, "AP"},
+                        {mjITEM_BUTTON, "Reset", 2, nullptr, " #459"},
+                        {mjITEM_SELECT, "Planner", 2, &planner_, ""},
+                        {mjITEM_SELECT, "Estimator", 2, &estimator_, ""},
+                        {mjITEM_CHECKINT, "Plan", 2, &plan_enabled, ""},
+                        {mjITEM_CHECKINT, "Action", 2, &action_enabled, ""},
+                        {mjITEM_CHECKINT, "Plots", 2, &plot_enabled, ""},
+                        {mjITEM_CHECKINT, "Traces", 2, &visualize_enabled, ""},
+                        {mjITEM_SEPARATOR, "Agent Settings", 1},
+                        {mjITEM_SLIDERNUM, "Horizon", 2, &horizon_, "0 1"},
+                        {mjITEM_SLIDERNUM, "Timestep", 2, &timestep_, "0 1"},
+                        {mjITEM_SELECT, "Integrator", 2, &integrator_,
+                         "Euler\nRK4\nImplicit\nFastImplicit"},
+                        {mjITEM_SEPARATOR, "Planner Settings", 1},
+                        {mjITEM_END}};
 
   // planner names
   mju::strcpy_arr(defAgent[2].other, planner_names_);
 
+  // estimator names
+  if (!mjpc::GetCustomNumericData(model_, "estimator") || !estimator_enabled) {
+    mju::strcpy_arr(defAgent[3].other, "Ground Truth");
+  } else {
+    mju::strcpy_arr(defAgent[3].other, estimator_names_);
+  }
+
   // set planning horizon slider limits
-  mju::sprintf_arr(defAgent[8].other, "%f %f", kMinPlanningHorizon,
+  mju::sprintf_arr(defAgent[9].other, "%f %f", kMinPlanningHorizon,
                    kMaxPlanningHorizon);
 
   // set time step limits
-  mju::sprintf_arr(defAgent[9].other, "%f %f", kMinTimeStep, kMaxTimeStep);
+  mju::sprintf_arr(defAgent[10].other, "%f %f", kMinTimeStep, kMaxTimeStep);
 
   // add agent
   mjui_add(&ui, defAgent);
 
   // planner
   ActivePlanner().GUI(ui);
+
+  // estimator
+  if (ActiveEstimatorIndex() > 0) {
+    ActiveEstimator().GUI(ui);
+  }
 }
 
 // task-based GUI event
@@ -521,15 +711,53 @@ void Agent::AgentEvent(mjuiItem* it, mjData* data,
       break;
     case 1:  // planner change
       if (model_) {
+        // reset plots
         this->PlotInitialize();
         this->PlotReset();
+
+        // reset agent
         uiloadrequest.fetch_sub(1);
       }
       break;
-    case 3:  // controller on/off
+    case 2:  // estimator change
+      // check for estimators
+      if (!GetCustomNumericData(model_, "estimator") || !estimator_enabled) {
+        estimator_ = 0;
+        break;
+      }
+      // reset
+      if (model_) {
+        // reset plots
+        this->PlotInitialize();
+        this->PlotReset();
+
+        // reset estimator
+        ActiveEstimator().Reset(data);
+
+        // reset agent
+        reset_estimator = false;     // skip estimator reset
+        uiloadrequest.fetch_sub(1);  // reset
+        reset_estimator = true;      // restore estimator reset
+      }
+      break;
+    case 4:  // controller on/off
       if (model_) {
         mju_zero(data->ctrl, model_->nu);
       }
+  }
+}
+
+// agent-based GUI event
+void Agent::EstimatorEvent(mjuiItem* it, mjData* data,
+                           std::atomic<int>& uiloadrequest, int& run) {
+  switch (it->itemid) {
+    case 0:  // reset estimator
+      if (model_) {
+        this->ActiveEstimator().Reset(data);
+        this->PlotInitialize();
+        this->PlotReset();
+      }
+      break;
   }
 }
 
@@ -550,7 +778,7 @@ void Agent::PlotInitialize() {
   // title
   mju::strcpy_arr(plots_.cost.title, "Objective");
   mju::strcpy_arr(plots_.action.title, "Actions");
-  mju::strcpy_arr(plots_.planner.title, "Planner (log10)");
+  mju::strcpy_arr(plots_.planner.title, "Agent (log10)");
   mju::strcpy_arr(plots_.timer.title, "CPU time (msec)");
 
   // x-labels
@@ -650,9 +878,8 @@ void Agent::PlotInitialize() {
   // initialize
   for (int j = 0; j < 20; j++) {
     for (int i = 0; i < mjMAXLINEPNT; i++) {
-      plots_.planner.linedata[j][2 * i] = (float)-i;
-      plots_.timer.linedata[j][2 * i] = (float)-i;
-
+      plots_.planner.linedata[j][2 * i] = static_cast<float>(-i);
+      plots_.timer.linedata[j][2 * i] = static_cast<float>(-i);
 
       // colors
       if (j == 0) continue;
@@ -686,8 +913,8 @@ void Agent::PlotReset() {
 
     // reset x tick marks
     for (int i = 0; i < mjMAXLINEPNT; i++) {
-      plots_.planner.linedata[k][2 * i] = (float)-i;
-      plots_.timer.linedata[k][2 * i] = (float)-i;
+      plots_.planner.linedata[k][2 * i] = static_cast<float>(-i);
+      plots_.timer.linedata[k][2 * i] = static_cast<float>(-i);
     }
   }
 }
@@ -832,7 +1059,15 @@ void Agent::Plots(const mjData* data, int shift) {
   if (!plan_enabled) return;
 
   // planner-specific plotting
-  ActivePlanner().Plots(&plots_.planner, &plots_.timer, 0, 1, plan_enabled);
+  int planner_shift[2] {0, 0};
+  ActivePlanner().Plots(&plots_.planner, &plots_.timer, 0, 1, plan_enabled,
+                        planner_shift);
+
+  // estimator-specific plotting
+  if (ActiveEstimatorIndex() > 0) {
+    ActiveEstimator().Plots(&plots_.planner, &plots_.timer, planner_shift[0],
+                            planner_shift[1] + 1, plan_enabled, NULL);
+  }
 
   // total (agent) compute time
   double timer_bounds[2] = {0.0, 1.0};

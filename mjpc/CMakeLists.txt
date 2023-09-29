@@ -234,112 +234,123 @@ target_link_libraries(
 )
 target_include_directories(threadpool PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-
-set(LIBMJPC_INCLUDES
-    common/EigenTypes.h
-    states/state.h
-    states/include.h
-    agent.h
-    trajectory.h
-    utilities.h
-    tasks/tasks.h
-    tasks/acrobot/acrobot.h
-    tasks/cartpole/cartpole.h
-    tasks/hand/hand.h
-    tasks/humanoid/stand/stand.h
-    tasks/humanoid/tracking/tracking.h
-    tasks/humanoid/walk/walk.h
-    tasks/manipulation/common.h
-    tasks/manipulation/manipulation.h
-    tasks/panda/panda.h
-    tasks/particle/particle.h
-    tasks/planar_pusher/planar_pusher.h
-    tasks/quadrotor/quadrotor.h
-    tasks/quadruped/quadruped.h
-    tasks/swimmer/swimmer.h
-    tasks/walker/walker.h
-    planners/planner.h
-    planners/policy.h
-    planners/include.h
-    planners/cost_derivatives.h
-    planners/linear_solve.h
-    planners/model_derivatives.h
-    planners/sampling/planner.h
-    planners/sampling/policy.h
-    planners/gradient/gradient.h
-    planners/gradient/planner.h
-    planners/gradient/policy.h
-    planners/gradient/settings.h
-    planners/gradient/spline_mapping.h
-    planners/ilqg/backward_pass.h
-    planners/ilqg/boxqp.h
-    planners/ilqg/planner.h
-    planners/ilqg/policy.h
-    planners/ilqg/settings.h
-    planners/ilqs/planner.h
-    planners/mjpc_opt/planner.h
-    norm.h
-    task.h
-    insat_task.h
-)
-
-set(LIBMJPC_SOURCES
-  states/state.cc
-  states/include.cc
-  agent.cc
-  trajectory.cc
-  utilities.cc
-  tasks/tasks.cc
-  tasks/acrobot/acrobot.cc
-  tasks/cartpole/cartpole.cc
-  tasks/hand/hand.cc
-  tasks/humanoid/stand/stand.cc
-  tasks/humanoid/tracking/tracking.cc
-  tasks/humanoid/walk/walk.cc
-  tasks/manipulation/common.cc
-  tasks/manipulation/manipulation.cc
-  tasks/panda/panda.cc
-  tasks/particle/particle.cc
-  tasks/planar_pusher/planar_pusher.cc
-  tasks/quadrotor/quadrotor.cc
-  tasks/quadruped/quadruped.cc
-  tasks/swimmer/swimmer.cc
-  tasks/walker/walker.cc
-  tasks/insat/gen3_hebi/gen3_hebi.cc
-  tasks/insat/gen3_flip/gen3_flip.cc
-  planners/planner.cc
-  planners/include.cc
-  planners/cost_derivatives.cc
-  planners/linear_solve.cc
-  planners/model_derivatives.cc
-  planners/sampling/planner.cc
-  planners/sampling/policy.cc
-  planners/gradient/gradient.cc
-  planners/gradient/planner.cc
-  planners/gradient/policy.cc
-  planners/gradient/spline_mapping.cc
-  planners/ilqg/backward_pass.cc
-  planners/ilqg/planner.cc
-  planners/ilqg/policy.cc
-  planners/ilqs/planner.cc
-  planners/mjpc_opt/planner.cc
-  norm.cc
-  task.cc
-  insat_task.cc
-)
-
 add_library(
-  libmjpc STATIC
-  ${LIBMJPC_INCLUDES}
-  ${LIBMJPC_SOURCES}
+        libmjpc STATIC
+        states/state.cc
+        states/state.h
+        agent.cc
+        agent.h
+        trajectory.cc
+        trajectory.h
+        utilities.cc
+        utilities.h
+        tasks/tasks.cc
+        tasks/tasks.h
+        tasks/acrobot/acrobot.cc
+        tasks/acrobot/acrobot.h
+        tasks/cartpole/cartpole.cc
+        tasks/cartpole/cartpole.h
+        tasks/fingers/fingers.cc
+        tasks/fingers/fingers.h
+        tasks/hand/hand.cc
+        tasks/hand/hand.h
+        tasks/humanoid/stand/stand.cc
+        tasks/humanoid/stand/stand.h
+        tasks/humanoid/tracking/tracking.cc
+        tasks/humanoid/tracking/tracking.h
+        tasks/humanoid/walk/walk.cc
+        tasks/humanoid/walk/walk.h
+        tasks/manipulation/common.cc
+        tasks/manipulation/common.h
+        tasks/manipulation/manipulation.cc
+        tasks/manipulation/manipulation.h
+        tasks/panda/panda.cc
+        tasks/panda/panda.h
+        tasks/particle/particle.cc
+        tasks/particle/particle.h
+        tasks/planar_pusher/planar_pusher.h
+        tasks/planar_pusher/planar_pusher.cc
+        tasks/quadrotor/quadrotor.cc
+        tasks/quadrotor/quadrotor.h
+        tasks/quadruped/quadruped.cc
+        tasks/quadruped/quadruped.h
+        tasks/swimmer/swimmer.cc
+        tasks/swimmer/swimmer.h
+        tasks/walker/walker.cc
+        tasks/walker/walker.h
+        tasks/insat/gen3_hebi/gen3_hebi.cc
+        tasks/insat/gen3_flip/gen3_flip.cc
+        tasks/insat/gen3_realflip/gen3_realflip.cc
+        planners/planner.cc
+        planners/planner.h
+        planners/policy.h
+        planners/include.cc
+        planners/include.h
+        planners/cost_derivatives.cc
+        planners/cost_derivatives.h
+        planners/model_derivatives.cc
+        planners/model_derivatives.h
+        planners/robust/robust_planner.cc
+        planners/robust/robust_planner.h
+        planners/sampling/planner.cc
+        planners/sampling/planner.h
+        planners/sampling/policy.cc
+        planners/sampling/policy.h
+        planners/gradient/gradient.cc
+        planners/gradient/gradient.h
+        planners/gradient/planner.cc
+        planners/gradient/planner.h
+        planners/gradient/policy.cc
+        planners/gradient/policy.h
+        planners/gradient/settings.h
+        planners/gradient/spline_mapping.cc
+        planners/gradient/spline_mapping.h
+        planners/ilqg/backward_pass.cc
+        planners/ilqg/backward_pass.h
+        planners/ilqg/boxqp.h
+        planners/ilqg/planner.cc
+        planners/ilqg/planner.h
+        planners/ilqg/policy.cc
+        planners/ilqg/policy.h
+        planners/ilqg/settings.h
+        planners/ilqs/planner.cc
+        planners/ilqs/planner.h
+        estimators/batch.cc
+        estimators/batch.h
+        estimators/estimator.h
+        estimators/include.cc
+        estimators/include.h
+        estimators/kalman.cc
+        estimators/kalman.h
+        estimators/model_parameters.cc
+        estimators/model_parameters.h
+        estimators/trajectory.h
+        estimators/unscented.cc
+        estimators/unscented.h
+        app.cc
+        app.h
+        norm.cc
+        norm.h
+        simulate.cc
+        simulate.h
+        task.cc
+        task.h
+#        insat_task.h
+#        insat_task.cc
+        $<TARGET_OBJECTS:mujoco::platform_ui_adapter>
 )
 set_target_properties(libmjpc PROPERTIES OUTPUT_NAME mjpc PUBLIC_HEADER "${LIBMJPC_INCLUDES}")
 target_compile_options(libmjpc PUBLIC ${MJPC_COMPILE_OPTIONS})
+target_compile_definitions(libmjpc PRIVATE MJSIMULATE_STATIC)
 target_link_libraries(
   libmjpc
+  absl::any_invocable
   absl::flat_hash_map
   absl::random_random
+  glfw
+  lodepng
   mujoco::mujoco
+  mujoco::platform_ui_adapter
   threadpool
   Threads::Threads
   mujoco::platform_ui_adapter
@@ -348,12 +359,7 @@ target_include_directories(libmjpc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_executable(
   mjpc
-  app.cc
-  app.h
   main.cc
-  simulate.cc
-  simulate.h
-  $<TARGET_OBJECTS:mujoco::platform_ui_adapter>
 )
 target_link_libraries(
   mjpc
@@ -361,11 +367,8 @@ target_link_libraries(
   absl::flags_parse
   absl::random_random
   absl::strings
-  glfw
   libmjpc
-  lodepng
   mujoco::mujoco
-  mujoco::platform_ui_adapter
   threadpool
   Threads::Threads
 )

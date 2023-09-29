@@ -34,8 +34,6 @@ int NormParameterDimension(int type) {
       return 1;
     case NormType::kCosh:
       return 1;
-    case NormType::kGeodesic:
-      return 4;
     case NormType::kPowerLoss:
       return 1;
     case NormType::kSmoothAbsLoss:
@@ -44,15 +42,13 @@ int NormParameterDimension(int type) {
       return 2;
     case NormType::kRectifyLoss:
       return 1;
-    case NormType::kRatioLoss:
-      return 0;
   }
   return 0;
 }
 
 // evaluate norm; optionally: gradient, Hessian
-double Norm(double* g, double* H, const double* x, const double* params,
-            int n, NormType type) {
+double Norm(double* g, double* H, const double* x, const double* params, int n,
+            NormType type) {
   if (H && !g) {
     mju_error("Called Norm with H and no g");
   }
@@ -72,7 +68,8 @@ double Norm(double* g, double* H, const double* x, const double* params,
       }
       break;
     }
-    case NormType::kQuadratic:  {  // y = 0.5 * x' * x
+
+    case NormType::kQuadratic: {  // y = 0.5 * x' * x
       for (int i = 0; i < n; i++) {
         y += x[i] * x[i];
       }
@@ -146,16 +143,8 @@ double Norm(double* g, double* H, const double* x, const double* params,
     case NormType::kCosh: {  // y = p^2 * (cosh(x / p) - 1)
       for (int i = 0; i < n; i++) {
         y += p * p * (std::cosh(x[i] / p) - 1.0);
-      }
-      if (g) {
-        for (int i = 0; i < n; i++) {
-          g[i] = p * std::sinh(x[i] / p);
-        }
-      }
-      if (H) {
-        for (int i = 0; i < n; i++) {
-          H[i * n + i] = std::cosh(x[i] / p);
-        }
+        if (g) g[i] = p * std::sinh(x[i] / p);
+        if (H) H[i * n + i] = std::cosh(x[i] / p);
       }
       break;
     }
@@ -164,15 +153,11 @@ double Norm(double* g, double* H, const double* x, const double* params,
       for (int i = 0; i < n; i++) {
         double s = mju_abs(x[i]);
         y += mju_pow(s, p);
-      }
-      if (g) {
-        for (int i = 0; i < n; i++) {
-          g[i] = mju_sign(x[i]) * p * mju_pow(mju_abs(x[i]), p - 1);
+        if (g) {
+          g[i] = mju_sign(x[i]) * p * mju_pow(s, p - 1);
         }
-      }
-      if (H) {
-        for (int i = 0; i < n; i++) {
-          H[i * n + i] = (p - 1) * p * mju_pow(mju_abs(x[i]), p - 2);
+        if (H) {
+          H[i * n + i] = (p - 1) * p * mju_pow(s, p - 2);
         }
       }
       break;
@@ -203,22 +188,6 @@ double Norm(double* g, double* H, const double* x, const double* params,
     }
 
     case NormType::kRectifyLoss: {  // y  =  p*log(1 + exp(x/p))
-      for (int i = 0; i < n; i++) {
-        if (p > 0) {
-          double s = mju_exp(x[i] / p);
-          y += p * mju_log(1 + s);
-          if (g) g[i] = s / (1 + s);
-          if (H) H[i * n + i] = s / (p * (1 + s) * (1 + s));
-        } else {
-          y += x[i] > 0 ? x[i] : 0;
-          if (g) g[i] = x[i] > 0 ? 1 : 0;
-          if (H) H[i * n + i] = 0;
-        }
-      }
-      break;
-    }
-
-    case NormType::kRatioLoss: {  // y  =  p*log(1 + exp(x/p))
       for (int i = 0; i < n; i++) {
         if (p > 0) {
           double s = mju_exp(x[i] / p);
