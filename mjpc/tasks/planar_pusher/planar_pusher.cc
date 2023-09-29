@@ -30,13 +30,13 @@ namespace mjpc {
 // ------- Residuals for planar_pusher task ------
 //     load_pos: load should at goal position
 // ------------------------------------------
-  void PlanarPusher::Residual(const mjModel* model, const mjData* data,
+  void PlanarPusher::ResidualFn::Residual(const mjModel* model, const mjData* data,
                           double* residual) const {
     int idx = 0;
 
     // ---------- load_horz ----------
     auto ee_pos = getEEPosition(model, data);
-    residual[idx++] = ee_pos(1) - parameters[0];
+    residual[idx++] = ee_pos(1) - task_->parameters[0];
 
     // ---------- load_vert ----------
     residual[idx++] = ee_pos(2) + 0.6;
@@ -99,7 +99,7 @@ namespace mjpc {
 
   }
 
-  Vec3f PlanarPusher::getEEPosition(const mjModel *model, const mjData *data) const
+  Vec3f PlanarPusher::ResidualFn::getEEPosition(const mjModel *model, const mjData *data) const
   {
     VecDf ee_pos(3);
     mju_copy(ee_pos.data(), data->xpos + 3*(model->nbody-1), 3);

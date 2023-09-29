@@ -137,7 +137,7 @@ void Panda::TransitionLocked(mjModel* model, mjData* data) {
   }
 }
 
-VecDf Panda::NetEffort(const mjModel *model, const mjData *data) const {
+VecDf Panda::ResidualFn::NetEffort(const mjModel *model, const mjData *data) const {
 
   VecDf effort(model->nq);
   mju_add(effort.data(), data->qfrc_smooth, data->qfrc_constraint, model->nq);

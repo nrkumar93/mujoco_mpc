@@ -49,6 +49,9 @@ class State {
   void Set(const mjModel* model, const double* qpos, const double* qvel,
            const double* act, const double* mocap_pos, const double* mocap_quat,
            const double* userdata, double time);
+  void Set(const mjModel* model, const mjData* data,
+           const double* state, const double* mocap,
+           const double* userdata, double time);
 
   // set qpos
   void SetPosition(const mjModel* model, const double* qpos);
@@ -68,11 +71,6 @@ class State {
 
   // set time
   void SetTime(const mjModel* model, double time);
-
-  // set state from values
-  void Set(const mjModel* model, const mjData* data,
-           const double* state, const double* mocap,
-           const double* userdata, double time);
 
   // copy into destination
   void CopyTo(double* dst_state, double* dst_mocap, double* dst_userdata,

@@ -76,17 +76,45 @@ void State::Set(const mjModel* model, const double* qpos, const double* qvel,
   // state
   SetPosition(model, qpos);
   SetVelocity(model, qvel);
-//  SetAct(model, act);
+  SetAct(model, act);
 
   // mocap
-//  SetMocap(model, mocap_pos, mocap_quat);
+  SetMocap(model, mocap_pos, mocap_quat);
 
   // userdata
-//  SetUserData(model, userdata);
+  SetUserData(model, userdata);
 
   // time
   SetTime(model, time);
 }
+
+void State::Set(const mjModel* model, const mjData* data,
+                const double *state, const double *mocap, const double *userdata, double time) {
+  if (model && data) {
+    const std::unique_lock<std::shared_mutex> lock(mtx_);
+
+    state_.resize(model->nq + model->nv + model->na);
+    mocap_.resize(7 * model->nmocap);
+
+    // state
+    mju_copy(state_.data(), state, model->nq);
+    mju_copy(DataAt(state_, model->nq), state + model->nq, model->nv);
+//    mju_copy(DataAt(state_, model->nq + model->nv), data->act, model->na);
+
+//    // mocap
+//    for (int i = 0; i < model->nmocap; i++) {
+//      mju_copy(DataAt(mocap_, 7 * i), data->mocap_pos + 3 * i, 3);
+//      mju_copy(DataAt(mocap_, 7 * i + 3), data->mocap_quat + 4 * i, 4);
+//    }
+//
+//    // userdata
+//    mju_copy(userdata_.data(), data->userdata, model->nuserdata);
+
+    // time
+    time_ = time;
+  }
+}
+
 
 // TODO: make all these "Set*" functions thread-safe, or change their name.
 

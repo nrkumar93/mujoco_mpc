@@ -24,7 +24,7 @@
 namespace mjpc {
 class Panda : public Task {
  public:
-  Panda() : gen_(0) {}
+  Panda() : gen_(0), residual_(this) {}
   std::string Name() const override;
   std::string XmlPath() const override;
   class ResidualFn : public mjpc::BaseResidualFn {
@@ -32,10 +32,9 @@ class Panda : public Task {
     explicit ResidualFn(const Panda* task) : mjpc::BaseResidualFn(task) {}
     void Residual(const mjModel* model, const mjData* data,
                   double* residual) const override;
+    VecDf NetEffort(const mjModel* model, const mjData* data) const;
   };
-  Panda() : residual_(this) {}
   void TransitionLocked(mjModel* model, mjData* data) override;
-  VecDf NetEffort(const mjModel* model, const mjData* data) const;
 
 //  absl::BitGen gen_;
   std::mt19937 gen_;

@@ -30,14 +30,14 @@ namespace mjpc {
 // ------- Residuals for planar_pusher task ------
 //     load_pos: load should at goal position
 // ------------------------------------------
-  void Gen3Flip::Residual(const mjModel* model, const mjData* data,
+  void Gen3Flip::ResidualFn::Residual(const mjModel* model, const mjData* data,
                           double* residual) const {
     int idx = 0;
 
     // ---------- jpos ----------
     for (int i=0; i<model->nq; ++i)
     {
-      residual[idx++] = parameters[i] - data->qpos[i];
+      residual[idx++] = task_->parameters[i] - data->qpos[i];
 //      residual[idx++] = data->qpos[i] - parameters[i];
     }
 
@@ -70,7 +70,7 @@ namespace mjpc {
 
   }
 
-  VecDf Gen3Flip::NetEffort(const mjModel *model, const mjData *data) const {
+  VecDf Gen3Flip::ResidualFn::NetEffort(const mjModel *model, const mjData *data) const {
 
     VecDf effort(model->nq);
     mju_add(effort.data(), data->qfrc_smooth, data->qfrc_constraint, model->nq);
