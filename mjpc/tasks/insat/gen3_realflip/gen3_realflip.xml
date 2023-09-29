@@ -1,0 +1,166 @@
+<mujoco model="gen3_hebi">
+    <compiler angle="radian"/>
+    <size nconmax="100" njmax="500" nstack="1270940"/>
+    <option>
+        <flag energy="enable"/>
+    </option>
+    <asset>
+        <!-- Gen3Hebi Arm Meshes -->
+        <mesh name="Base_Link" file="meshes/Base_Link.stl"/>
+        <mesh name="Shoulder_Link" file="meshes/Shoulder_Link.stl"/>
+        <mesh name="HalfArm1_Link" file="meshes/HalfArm1_Link.stl"/>
+        <mesh name="HalfArm2_Link" file="meshes/HalfArm2_Link.stl"/>
+        <mesh name="ForeArm_Link" file="meshes/ForeArm_Link.stl"/>
+        <mesh name="SphericalWrist1_Link" file="meshes/SphericalWrist1_Link.stl"/>
+        <mesh name="SphericalWrist2_Link" file="meshes/SphericalWrist2_Link.stl"/>
+        <mesh name="Bracelet_Link" file="meshes/Bracelet_Link.stl"/>
+        <mesh name="Hebi_Mount_Link" file="meshes/hebi_mount.stl" scale="0.001 0.001 0.001"/>
+        <mesh name="Hebi_Proximal_Link" file="meshes/hebi_proximal.stl" scale="0.001 0.001 0.001"/>
+        <mesh name="Hebi_Distal_Link" file="meshes/hebi_distal.stl" scale="0.001 0.001 0.001"/>
+
+        <material name="BeigeMaterial" specular="0" shininess="0" reflectance="0" rgba="0.26 0.16 0.16796875 1" emission="0" />
+        <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" />
+        <material name="MatPlane" reflectance="0" texture="texplane" texrepeat="1 1" texuniform="true" />
+        <material name="MatGnd" specular=".3" shininess=".3" reflectance="0.3" rgba=".5 .55 .5 1"/>
+    </asset>
+
+    <default>
+      <!-- <joint armature="0.1" damping="2"/> -->
+      <joint armature="1" damping="2"/>
+    </default>
+
+
+    <visual>
+        <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
+        <map znear=".01"/>
+        <quality shadowsize="2048"/>
+        <global elevation="-15"/>
+    </visual>
+
+    <worldbody>
+
+        <!-- obstacles -->
+        <body name="obstacles" pos="0 0 0">
+            <include file="gen3_realflip_obstacles.xml"/>
+        </body>
+
+        <!-- Robot: gen3 -->
+        <body name="Base_Link"  pos="0.0 0.0 0.6574859" euler="0 0 0.0698132">
+            <inertial pos="-0.000648 -0.000166 0.084487" mass="1.697353" fullinertia="0.004622 0.004495 0.002079 -9E-06 -6E-05 -9E-06"/>
+            <geom type="mesh" rgba="0.79216 0.81961 0.93333 1" mesh="Base_Link" conaffinity="32" contype="32"/>
+
+            <body name="Shoulder_Link" pos="6.1995e-05 0 0.17" quat="-3.67321e-06 -1 0 0">
+                <inertial pos="-2.3e-05 -0.010364 -0.07336" mass="1.37735" fullinertia="0.00457 0.004831 0.001409 -1E-06 -2E-06 -0.000448"/>
+                <joint name="Actuator1" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
+                <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Shoulder_Link" conaffinity="32" contype="32"/>
+                <site name="j1" pos="0 0 0"/>
+
+                <body name="HalfArm1_Link" pos="0 0.005375 -0.12838" quat="0.707105 0.707108 0 0">
+                    <inertial pos="-4.4e-05 -0.09958 -0.013278" quat="0.482348 0.516286 -0.516862 0.483366" mass="1.16367" diaginertia="0.0113017 0.011088 0.00102532"/>
+                    <joint name="Actuator2" pos="0 0 0" axis="0 0 1" limited="true" range="-2.2 2.2"/>
+                    <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="HalfArm1_Link" conaffinity="32" contype="32"/>
+                    <site name="j2" pos="0 0 0"/>
+
+                    <body name="HalfArm2_Link" pos="0 -0.21038 -0.006375" quat="0.707105 -0.707108 0 0">
+                        <inertial pos="-4.4e-05 -0.006641 -0.117892" quat="0.706144 0.0213722 -0.0209128 0.707437" mass="1.16366" diaginertia="0.0111633 0.010932 0.00100671"/>
+                        <joint name="Actuator3" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283" />
+                        <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="HalfArm2_Link" conaffinity="32" contype="32"/>
+                        <site name="j3" pos="0 0 0"/>
+
+                        <body name="ForeArm_Link" pos="0 0.006375 -0.21038" quat="0.707105 0.707108 0 0">
+                            <inertial pos="-1.8e-05 -0.075478 -0.015006" quat="0.483678 0.515961 -0.515859 0.483455" mass="0.930287" diaginertia="0.00834839 0.008147 0.000598606"/>
+                            <joint name="Actuator4" pos="0 0 0" axis="0 0 1" limited="true" range="-2.5656 2.5656"/>
+                            <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="ForeArm_Link" conaffinity="32" contype="32"/>
+                            <site name="j4" pos="0 0 0"/>
+
+                            <body name="SphericalWrist1_Link" pos="0 -0.20843 -0.006375" quat="0.707105 -0.707108 0 0">
+                                <inertial pos="1e-06 -0.009432 -0.063883" quat="0.703558 0.0707492 -0.0707492 0.703558" mass="0.678106" diaginertia="0.00165901 0.001596 0.000346988"/>
+                                <joint name="Actuator5" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
+                                <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="SphericalWrist1_Link" conaffinity="32" contype="32"/>
+                                <site name="j5" pos="0 0 0"/>
+
+                                <body name="SphericalWrist2_Link" pos="0 0.00017505 -0.10593" quat="0.707105 0.707108 0 0">
+                                    <inertial pos="1e-06 -0.045483 -0.00965" quat="0.44426 0.550121 -0.550121 0.44426" mass="0.678106" diaginertia="0.00170087 0.001641 0.00035013"/>
+                                    <joint name="Actuator6" pos="0 0 0" axis="0 0 1" limited="true" range="-2.05 2.05"/>
+                                    <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="SphericalWrist2_Link" conaffinity="32" contype="32"/>
+                                    <site name="j6" pos="0 0 0"/>
+
+                                    <body name="Bracelet_Link" pos="0 -0.10593 -0.00017505" quat="0.707105 -0.707108 0 0">
+                                        <inertial pos="-0.000281 -0.011402 -0.03108" quat="0.592556 0.413116 -0.393675 0.568536" mass="0.500657" diaginertia="0.000650457 0.00056985 0.000310694"/>
+                                        <joint name="Actuator7" pos="0 0 0" axis="0 0 1" limited="true" range="-6.283 6.283"/>
+                                        <geom type="mesh" rgba="0.75294 0.75294 0.75294 1" mesh="Bracelet_Link" conaffinity="32" contype="32"/>
+                                        <site name="j7" pos="0 0 0"/>
+
+                                        <body name="ee_link" pos="0 0 -0.064">
+                                            <inertial pos="0.0 0 -0.009525" mass="0.06"/>
+                                            <geom name="woodblock" type="box" pos="0 0 -0.009525" size="0.1524 0.06985 0.009525" rgba=".9 .9 0 1" conaffinity="32" contype="32" condim='3' friction='0.1000 0.1000 0.1000' priority="1"/>
+                                            <body name="payload" pos="0 0 -0.01905">
+                                                <inertial pos="0.0 0 -0.612775" mass="1.6"/>
+                                                <geom name="pltop" type="box" pos="0 0.0047625 -0.612775" size="0.06985 0.0047625 0.612775" rgba="1 .4 0 1" conaffinity="32" contype="32" condim='3' friction='0.1000 0.1000 0.1000' priority="1"/>
+                                                <geom name="plbottom" type="box" pos="0 -0.0047625 -0.612775" size="0.06985 0.0047625 0.612775" rgba="0 .8 1 1" conaffinity="32" contype="32" condim='3' friction='0.1000 0.1000 0.1000' priority="1"/>
+                                            </body>
+                                        </body>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </worldbody>
+
+    <!-- Actuators -->
+    <actuator>
+        <motor name="Shoulder_Link_motor" joint="Actuator1" ctrlrange="-39 39" ctrllimited="true"/>
+        <motor name="HalfArm1_Link_motor" joint="Actuator2" ctrlrange="-39 39" ctrllimited="true"/>
+        <motor name="HalfArm2_Link_motor" joint="Actuator3" ctrlrange="-39 39" ctrllimited="true"/>
+        <motor name="ForeArm_Link_motor" joint="Actuator4" ctrlrange="-39 39" ctrllimited="true"/>
+        <motor name="SphericalWrist1_Link_motor" joint="Actuator5" ctrlrange="-9 9" ctrllimited="true"/>
+        <motor name="SphericalWrist2_Link_motor" joint="Actuator6" ctrlrange="-9 9" ctrllimited="true"/>
+        <motor name="Bracelet_Link_motor" joint="Actuator7" ctrlrange="-9 9" ctrllimited="true"/>
+    </actuator>
+
+    <keyframe>
+        <!-- st -->
+        <!-- <key qpos='0.31817 2.17437 -0.0254414 -1.64308 3.20733 -1.56457 -4.72114'/> -->
+        <!-- 0.45 , elbow up-->
+        <!-- <key qpos='0.352616 1.40048 0.747101 1.30458 3.79855 0.966166 -2.72476'/> -->
+        <!-- <key qpos='0.316563 1.5922 0.974114 1.01602 3.78058 1.08419 -2.70297'/> -->
+        <!-- 0.75 -->
+        <!-- <key qpos='0.3991568 1.66741775 0.38060395 -0.042743 -0.78440 0.65235171 -1.14011'/> -->
+        <!-- 0.61m -->
+        <!-- <key qpos='0.35442401 1.59460262 0.55791195 0.37247072 -1.16729366 0.36442475 -0.72762777'/> -->
+        <!-- 0.7 -->
+        <!-- <key qpos='0.40475931 1.68270684 0.48425905 -0.31616639 -0.49089131 0.84222608 -1.40113287'/> -->
+        <!-- meas -->
+        <!-- <key qpos='0.4791 1.4598 0.9744 -0.15648531 -0.94918531 0.9904 -1.38888531'/> -->
+        <!-- sim -->
+        <!-- <key qpos='0.491324 1.53907 0.977439 -0.186278 -0.932842 0.925998 -1.40225'/> -->
+
+
+        <!-- go -->
+        <!-- <key qpos='-0.459129 2.20037 -0.154297 -1.60934 3.16255 -1.48775 -1.65247'/> -->
+        <!-- 0.45m , elbow up-->
+        <!-- <key qpos='-0.667159 1.4678 0.8137 1.32967 3.70373 1.06009 0.141966'/> -->
+        <!-- <key qpos='-0.667385 1.49743 0.466714 1.06258 2.93724 0.423128 1.15863'/> -->
+        <!-- 0.75m -->
+        <!-- <key qpos='0.04550073 1.72813776 0.38067376 -0.340740 -0.64793 0.8258549 1.87509448'/> -->
+        <!-- 0.61m -->
+        <!-- measured -->
+        <!-- <key qpos='-0.24237387 1.66846495 0.57121136 0.23835962 -0.41287509 0.26366689 1.27819188'/>  -->
+        <!-- <key qpos='-0.22525219 1.67956525 0.56817448 0.23883085 -0.41322415 0.27577948 1.27676071'/> -->
+        <!-- <key qpos='-0.22841124 1.69886859 0.56833156 0.23890067 -0.41495203 0.2706133 1.27674325'/> -->
+        <!-- sim -->
+        <!-- <key qpos='-0.223805 1.78393 0.607142 0.163256 -0.39655 0.230215 1.28289'/> -->
+        <!-- 0.7m -->
+        <!-- <key qpos='-0.00827286 1.76805344 0.56147242 -0.42586034 -0.40688861 0.83042766 1.30192836'/> -->
+        <!-- meas -->
+        <!-- <key qpos='-0.12838531 1.5459 1.1112 -0.39098531 -1.03028531 0.9353 1.1429'/> -->
+        <!-- sim -->
+        <key qpos='-0.115585 1.64033 1.10061 -0.404588 -0.991795 0.833943 1.13519'/>
+
+
+    </keyframe>
+
+</mujoco>

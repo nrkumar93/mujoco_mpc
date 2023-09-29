@@ -1,0 +1,29 @@
+<mujoco model="obstacles">
+    <geom name="floor" pos="0 0 0" size="5 5 .125" type="plane" material="MatPlane" condim="3"  contype="32" conaffinity="32"/>
+
+    <!-- <geom name="pedestal" size="0.26035 0.4572 0.3095625" pos="0 0.0 0.3095625" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/> -->
+    <geom name="pedestal" size="0.25 0.399 0.3095625" pos="0 0.0 0.3095625" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/>
+    <geom name="baseplate" size="0.15 0.15 0.018775" pos="0 0.0 0.6379" type="box" rgba="0.2 0.2 0.2 1"  conaffinity="32" contype="32"/>
+
+    <!-- Environment: Workcell -->
+    <body name="wall" pos="1.0008 0 0">
+        <!-- 0.75 -->
+        <!-- <geom name="backwall" size="0.0508 0.4572 0.3048" pos="0.76115 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/> -->
+        <!-- <geom name="partition" size="0.4572 0.0508 0.3048" pos="1.21835 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/> -->
+        <!-- 0.7 -->
+        <geom name="backwall" size="0.0508 0.4572 0.3048" pos="0 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/>
+        <geom name="partition" size="0.4572 0.0508 0.3048" pos="0.508 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/>
+        <!-- <geom name="backwall_inf" size="0.0508 0.4572 0.3448" pos="0 0.0 0.3048" type="box" rgba="1 0 0 .2"  conaffinity="32" contype="32"/> -->
+        <!-- <geom name="partition_inf" size="0.4572 0.0908 0.5048" pos="0.508 0.0 0.3048" type="box" rgba="1 0 0 .2"  conaffinity="32" contype="32"/> -->
+        <geom name="sidewall" size="1.4572 0.01 1.4048" pos="0.508 -0.7 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/>
+        <!-- 0.61 -->
+        <!-- <geom name="backwall" size="0.0508 0.4572 0.3048" pos="0.62115 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/> -->
+        <!-- <geom name="partition" size="0.4572 0.0508 0.3048" pos="1.07835 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/> -->
+
+        <!-- <geom name="backwall" size="0.0508 0.4572 0.3048" pos="1 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/> -->
+        <!-- <geom name="partition" size="0.4572 0.0508 0.3048" pos="1.4572 0.0 0.3048" type="box" rgba="0.5 0.5 0 1"  conaffinity="32" contype="32"/> -->
+        
+        <!-- <geom name="wall5" size="0.836660027 0.045 0.547722558" pos="2 0.0 0.6" euler="0 -0.5796 0" type="box" rgba="0.8 0.4 0.8 1"  conaffinity="32" contype="32"/> -->
+        <!-- <geom name="wall5" size="0.974679434 0.045 0.223606798" pos="2 0.0 0.6" euler="0 -0.2255 0" type="box" rgba="0.8 0.4 0.8 1"  conaffinity="32" contype="32"/> -->
+    </body>
+</mujoco>
